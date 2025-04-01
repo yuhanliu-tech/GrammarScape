@@ -67,8 +67,6 @@
                 "composite_tolerance": 0.0873,
                 "connection_length": 100,
                 "merge_threshold": 10,
-                "comp_offset_x": 0,
-                "comp_offset_y": 0,
                 "draw_composite_nodes": 1,
                 "use_duplicate_mode": 1,
                 "fill_cycles": 1,
@@ -140,17 +138,15 @@
                 "composite_tolerance": 0.0873,
                 "connection_length": 100,
                 "merge_threshold": 10,
-                "comp_offset_x": 232,
-                "comp_offset_y": 300,
                 "draw_composite_nodes": 0,
                 "use_duplicate_mode": 0,
                 "fill_cycles": 1,
-                "post_process_intensity": 0,
+                "post_process_intensity": 9,
                 "camera_offset": [
-                    0,
-                    0
+                    1365,
+                    1666
                 ],
-                "camera_zoom": 2.809010936956619,
+                "camera_zoom": 2.3801652329354663,
                 "camera_yaw": 0.0,
                 "camera_pitch": 0.0
             }
@@ -213,17 +209,15 @@
                 "composite_tolerance": 0.0873,
                 "connection_length": 100,
                 "merge_threshold": 10,
-                "comp_offset_x": 246,
-                "comp_offset_y": 239,
                 "draw_composite_nodes": 0,
                 "use_duplicate_mode": 0,
                 "fill_cycles": 0,
-                "post_process_intensity": 1,
+                "post_process_intensity": 8,
                 "camera_offset": [
-                    0,
-                    0
+                    468,
+                    426
                 ],
-                "camera_zoom": 0.9948202825096862,
+                "camera_zoom": 0.7848828836430143,
                 "camera_yaw": 0.0,
                 "camera_pitch": 0.0
             }
