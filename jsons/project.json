@@ -218,7 +218,7 @@
                 "draw_composite_nodes": 0,
                 "use_duplicate_mode": 0,
                 "fill_cycles": 0,
-                "post_process_intensity": 0,
+                "post_process_intensity": 1,
                 "camera_offset": [
                     0,
                     0
