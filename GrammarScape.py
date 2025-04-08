@@ -1,5 +1,4 @@
 import pygame
-import pygame_gui
 import sys
 import math
 import json
@@ -22,11 +21,10 @@ TOP_PANEL_HEIGHT = 30     # Height of the top instructions panel.
 GUI_PANEL_WIDTH = 350
 
 # Panels:
-MAIN_PANEL_WIDTH = 550      # primary (base) graph
-RIGHT_PANEL_WIDTH = 550     # composite view
+MAIN_PANEL_WIDTH = 450      # primary (base) graph
+RIGHT_PANEL_WIDTH = 600     # composite view
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-manager = pygame_gui.UIManager((WIDTH, HEIGHT))
 
 pygame.display.set_caption("GrammarScape: Interactive Graph Editor")
 
@@ -43,14 +41,14 @@ instr_font = pygame.font.SysFont(None, 16)
 perspective_distance = 300
 
 # Row 1: Clear, Save, New Layer
-clear_btn_rect = pygame.Rect(10, TOP_PANEL_HEIGHT+10, 80, 25)
-capture_btn_rect = pygame.Rect(100, TOP_PANEL_HEIGHT+10, 80, 25)
-new_layer_btn_rect = pygame.Rect(190, TOP_PANEL_HEIGHT+10, 100, 25)
+clear_btn_rect = pygame.Rect(10, TOP_PANEL_HEIGHT+10, 90, 25)
+capture_btn_rect = pygame.Rect(110, TOP_PANEL_HEIGHT+10, 90, 25)
+new_layer_btn_rect = pygame.Rect(210, TOP_PANEL_HEIGHT+10, 120, 25)
 
 # Row 2: Capture Right Panel and Load JSON
 second_row_y = TOP_PANEL_HEIGHT + 45
-load_json_btn_rect = pygame.Rect(10, second_row_y, 135, 25)
-save_btn_rect  = pygame.Rect(155, second_row_y, 135, 25)
+load_json_btn_rect = pygame.Rect(10, second_row_y, 165, 25)
+save_btn_rect  = pygame.Rect(185, second_row_y, 155, 25)
 
 running = True
 selected_node = None
@@ -363,6 +361,40 @@ def detect_cycles_in_graph(g):
     return final_cycles
 
 ###############################
+# Checkbox Class
+###############################
+
+class Checkbox:
+    def __init__(self, x, y, label, value=False):
+        self.rect = pygame.Rect(x, y, 16, 16)
+        self.label = label
+        self.value = value
+
+    def draw(self, surf, font, mouse_pos):
+        color = (200, 200, 0) if self.rect.collidepoint(mouse_pos) else (180, 180, 180)
+        pygame.draw.rect(surf, color, self.rect, 2)
+        if self.value:
+            pygame.draw.line(surf, color, self.rect.topleft, self.rect.bottomright, 2)
+            pygame.draw.line(surf, color, self.rect.topright, self.rect.bottomleft, 2)
+
+        # Split label into two lines if there's a space
+        parts = self.label.split()
+        if len(parts) == 2:
+            label1 = font.render(parts[0], True, (255, 255, 255))
+            label2 = font.render(parts[1], True, (255, 255, 255))
+            label_x = self.rect.right + 6
+            surf.blit(label1, (label_x, self.rect.y - 2))
+            surf.blit(label2, (label_x, self.rect.y + 10))
+        else:
+            label_surf = font.render(self.label, True, (255, 255, 255))
+            surf.blit(label_surf, (self.rect.right + 6, self.rect.y - 2))
+
+    def process_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.rect.collidepoint(event.pos):
+                self.value = not self.value
+
+###############################
 # Slider Class
 ###############################
     
@@ -377,36 +409,66 @@ class Slider:
         self.label = label
         self.handle_radius = h // 2
         self.dragging = False
+        self._inline_offset = 0
+        self._inline_width = self.rect.width
 
-    def draw(self, surf, mouse_pos, font, show_label=True):
-        # Draw the slider track
-        track_y = self.rect.y + self.rect.height // 2
-        pygame.draw.line(surf, (120, 120, 120),
-                         (self.rect.x, track_y),
-                         (self.rect.x + self.rect.width, track_y), 3)
 
-        # Calculate slider knob position
-        denom = (self.max_val - self.min_val) or 1
-        t = (self.value - self.min_val) / denom
-        handle_x = self.rect.x + int(t * self.rect.width)
-        handle_y = track_y
-
-        # Change color when hovering/dragging
-        handle_color = (200, 200, 0) if (self.dragging or self.handle_hit_test(mouse_pos)) else (180, 180, 180)
-        pygame.draw.circle(surf, handle_color, (handle_x, handle_y), self.handle_radius)
-
-        # Only show the text label if show_label == True
-        if show_label:
+    def draw(self, surf, mouse_pos, font, show_label=True, inline=False):
+        if inline and show_label:
             val_text = str(int(self.value) if self.is_int else round(self.value, 2))
-            label_text = f"{self.label}: {val_text}"
-            surf.blit(font.render(label_text, True, (255, 255, 255)), (self.rect.x, self.rect.y - 18))
+            label_with_val = f"{self.label} ({val_text})"
+            label_surf = font.render(label_with_val, True, (255, 255, 255))
+            label_width = label_surf.get_width() + 8
+
+            # Update internal tracking info for hit test
+            self._inline_offset = self.rect.x + label_width
+            self._inline_width = self.rect.width - label_width
+
+            track_y = self.rect.y + self.rect.height // 2
+            surf.blit(label_surf, (self.rect.x, self.rect.y - 1))
+
+            pygame.draw.line(surf, (120, 120, 120),
+                            (self._inline_offset, track_y),
+                            (self._inline_offset + self._inline_width, track_y), 3)
+
+            denom = (self.max_val - self.min_val) or 1
+            t = (self.value - self.min_val) / denom
+            handle_x = self._inline_offset + int(t * self._inline_width)
+            handle_y = track_y
+            handle_color = (200, 200, 0) if (self.dragging or self.handle_hit_test(mouse_pos)) else (180, 180, 180)
+            pygame.draw.circle(surf, handle_color, (handle_x, handle_y), self.handle_radius)
+
+
+        else:
+            # Old layout
+            self._inline_offset = self.rect.x
+            self._inline_width = self.rect.width
+
+            track_y = self.rect.y + self.rect.height // 2
+            pygame.draw.line(surf, (120, 120, 120),
+                            (self.rect.x, track_y),
+                            (self.rect.x + self.rect.width, track_y), 3)
+
+            denom = (self.max_val - self.min_val) or 1
+            t = (self.value - self.min_val) / denom
+            handle_x = self.rect.x + int(t * self.rect.width)
+            handle_y = track_y
+            handle_color = (200, 200, 0) if (self.dragging or self.handle_hit_test(mouse_pos)) else (180, 180, 180)
+            pygame.draw.circle(surf, handle_color, (handle_x, handle_y), self.handle_radius)
+
+            if show_label:
+                val_text = str(int(self.value) if self.is_int else round(self.value, 2))
+                label_text = f"{self.label}: {val_text}"
+                surf.blit(font.render(label_text, True, (255, 255, 255)), (self.rect.x, self.rect.y - 18))
+
 
     def handle_hit_test(self, mouse_pos):
         denom = (self.max_val - self.min_val) or 1
         t = (self.value - self.min_val) / denom
-        handle_x = self.rect.x + int(t * self.rect.width)
+        handle_x = self._inline_offset + int(t * self._inline_width)
         handle_y = self.rect.y + self.rect.height // 2
         return math.dist(mouse_pos, (handle_x, handle_y)) <= self.handle_radius + 2
+
 
     def process_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -415,9 +477,10 @@ class Slider:
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.dragging = False
         elif event.type == pygame.MOUSEMOTION and self.dragging:
-            rel_x = event.pos[0] - self.rect.x
-            t = rel_x / self.rect.width
+            rel_x = event.pos[0] - self._inline_offset
+            t = rel_x / self._inline_width
             new_val = self.min_val + t*(self.max_val - self.min_val)
+
             if new_val < self.min_val:
                 new_val = self.min_val
             if new_val > self.max_val:
@@ -618,11 +681,11 @@ def load_project(filename):
         layer.sliders[12].value = layer.numIterations
         layer.sliders[13].value = layer.composite_seed
         layer.sliders[14].value = layer.composite_length_seed
-        layer.sliders[15].value = layer.draw_composite_nodes
-        layer.sliders[16].value = layer.use_duplicate_mode
-        layer.sliders[17].value = layer.fill_cycles
-        layer.sliders[18].value = layer.post_process_intensity
-        layer.sliders[19].value = layer.splatters
+        layer.checkboxes[0].value = layer.draw_composite_nodes
+        layer.checkboxes[1].value = layer.use_duplicate_mode
+        layer.checkboxes[2].value = layer.fill_cycles
+        layer.sliders[15].value = layer.post_process_intensity
+        layer.sliders[16].value = layer.splatters
 
         # Rebuild the composite graph now that the base graph is fully restored
         layer.build_composite_graph()
@@ -750,15 +813,28 @@ class Layer:
         self.post_process_intensity = 0
         self.splatters = 0
 
+        # Checkboxes ----------------------
+
+        slider_x = 10
+        slider_y = TOP_PANEL_HEIGHT + 175
+        slider_w = GUI_PANEL_WIDTH - 25
+        slider_gap = 30
+        smaller_gap = 20
+        s_height = 16
+
+        checkbox_x = 10
+        checkbox_y = slider_y
+        gap = 105
+        self.checkboxes = [
+            Checkbox(checkbox_x, checkbox_y, "Toggle Nodes", bool(self.draw_composite_nodes)),
+            Checkbox(checkbox_x + gap, checkbox_y, "Copy Graph", bool(self.use_duplicate_mode)),
+            Checkbox(checkbox_x + 2 * gap, checkbox_y, "Fill Cycles", bool(self.fill_cycles))
+        ]
+        slider_y += 85  # Move the Y cursor down after checkbox row
+
         # Sliders ------------------------
 
         # Build sliders (GUI)
-        slider_x = 10
-        slider_y = TOP_PANEL_HEIGHT + 200
-        slider_w = GUI_PANEL_WIDTH - 20
-        slider_gap = 35
-        smaller_gap = 20
-        s_height = 16
 
         self.sliders = []
         # 1) Edge Color (R, G, B) – label them simply "R", "G", "B"
@@ -792,7 +868,7 @@ class Layer:
         slider_y += smaller_gap
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 255,
                                    self.node_color[2], "B", True))
-        slider_y += slider_gap + 10
+        slider_y += slider_gap + 35
 
         # 4) Noise & Curve
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 50,
@@ -805,33 +881,18 @@ class Layer:
         # Edge thickness
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 15,
                                    self.edge_thickness, "Thickness", True))
-        slider_y += slider_gap
+        slider_y += slider_gap + 35
 
         # Iterations, seeds
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 1, 10,
                                    self.numIterations, "Iterations", True))
-        slider_y += slider_gap + 20
+        slider_y += slider_gap
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 1000,
                                    self.composite_seed, "Seed - Composite", True))
         slider_y += slider_gap
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 1000,
                                    self.composite_length_seed, "Seed - Edge Lengths", True))
-        slider_y += slider_gap + 20
-
-        # 0/1 for showing node circles
-        self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height,
-                                   0, 1, self.draw_composite_nodes, "Nodes On? ", True))
-        slider_y += slider_gap
-
-        # 0/1 "Use Duplicate?"
-        self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height,
-                                   0, 1, self.use_duplicate_mode, "Copy Graph? ", True))
-        slider_y += slider_gap
-
-        # 0/1 "FillCycles?"
-        self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height,
-                                   0, 1, self.fill_cycles, "Fill Cycles? ", True))
-        slider_y += slider_gap
+        slider_y += slider_gap + 35
 
         # Post Process slider: 0..10
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height,
@@ -847,14 +908,35 @@ class Layer:
         for s in self.sliders:
             for e in events:
                 s.process_event(e)
+        for cb in self.checkboxes:
+            for e in events:
+                cb.process_event(e)
+
 
     def draw_sliders(self, surface, mouse_pos):
+
+        # Tooltips setup
+        tooltips = []
+
+        # Draw checkboxes
+        for cb in self.checkboxes:
+            cb.draw(surface, font, mouse_pos)
+
+        color_opts_label = font.render("Graph Color Palette", True, (255, 255, 0))
+        color_opts_pos = (self.sliders[0].rect.x, self.sliders[0].rect.y - 45)
+        color_opts_rect = color_opts_label.get_rect(topleft=color_opts_pos)
+        surface.blit(color_opts_label, color_opts_pos)
+
+        if color_opts_rect.collidepoint(mouse_pos):
+            tooltips.append("Edit the colors of the graph\n in the current layer.")
+
         # 1) Edge color - sliders [0,1,2]
         ex, ey = self.sliders[0].rect.x, self.sliders[0].rect.y
         # Single label: "Edge RGB: R, G, B"
         edge_label = (
-            f"Edge RGB: {int(self.edge_color[0])}, "
+            f"Edge (RGB: {int(self.edge_color[0])}, "
             f"{int(self.edge_color[1])}, {int(self.edge_color[2])}"
+            f")"
         )
         surface.blit(font.render(edge_label, True, (255, 255, 255)), (ex, ey - 20))
         # Draw the 3 sliders with show_label=False
@@ -864,8 +946,9 @@ class Layer:
         # 2) Cycle color - sliders [3,4,5]
         cx, cy = self.sliders[3].rect.x, self.sliders[3].rect.y
         cycle_label = (
-            f"Cycle RGB: {int(self.cycle_color[0])}, "
+            f"Cycle (RGB: {int(self.cycle_color[0])}, "
             f"{int(self.cycle_color[1])}, {int(self.cycle_color[2])}"
+            f")"
         )
         surface.blit(font.render(cycle_label, True, (255, 255, 255)), (cx, cy - 20))
         for i in range(3, 6):
@@ -874,16 +957,60 @@ class Layer:
         # 3) Node color - sliders [6,7,8]
         nx, ny = self.sliders[6].rect.x, self.sliders[6].rect.y
         node_label = (
-            f"Node RGB: {int(self.node_color[0])}, "
+            f"Node (RGB: {int(self.node_color[0])}, "
             f"{int(self.node_color[1])}, {int(self.node_color[2])}"
+            f")"
         )
         surface.blit(font.render(node_label, True, (255, 255, 255)), (nx, ny - 20))
         for i in range(6, 9):
             self.sliders[i].draw(surface, mouse_pos, font, show_label=False)
 
         # 4) The rest of the sliders are drawn normally with their existing labels
-        for i in range(9, len(self.sliders)):
-            self.sliders[i].draw(surface, mouse_pos, font)
+
+        # --- Edge Options Section ---
+        edge_opts_label = font.render("Edge Options", True, (255, 255, 0))
+        edge_opts_pos = (self.sliders[9].rect.x, self.sliders[9].rect.y - 25)
+        edge_opts_rect = edge_opts_label.get_rect(topleft=edge_opts_pos)
+        surface.blit(edge_opts_label, edge_opts_pos)
+
+        if edge_opts_rect.collidepoint(mouse_pos):
+            tooltips.append("Noise adds randomness. \nCurve bends edges. \nThickness controls width.")
+
+        for i in range(9, 12):
+            self.sliders[i].draw(surface, mouse_pos, font, show_label=True, inline=True)
+
+        # --- Composite Graph Section ---
+        comp_graph_label = font.render("Composite Graph", True, (255, 255, 0))
+        comp_graph_pos = (self.sliders[12].rect.x, self.sliders[12].rect.y - 25)
+        comp_graph_rect = comp_graph_label.get_rect(topleft=comp_graph_pos)
+        surface.blit(comp_graph_label, comp_graph_pos)
+
+        if comp_graph_rect.collidepoint(mouse_pos):
+            tooltips.append("Controls how the composite graph\nis generated and expanded.")
+
+        for i in range(12, 15):
+            self.sliders[i].draw(surface, mouse_pos, font, show_label=True, inline=True)
+
+        # --- Post-process Effects Section ---
+        post_label = font.render("Post-process Effects", True, (255, 255, 0))
+        post_label_pos = (self.sliders[15].rect.x, self.sliders[15].rect.y - 25)
+        post_rect = post_label.get_rect(topleft=post_label_pos)
+        surface.blit(post_label, post_label_pos)
+
+        if post_rect.collidepoint(mouse_pos):
+            tooltips.append("Painterly = oil paint effect. \nSplatters = paint droplets.")
+
+        for i in range(15, len(self.sliders)):
+            self.sliders[i].draw(surface, mouse_pos, font, show_label=True, inline=True)
+
+        # --- Show tooltip if hovering ---
+        for i, tip in enumerate(tooltips):
+            tip_surf = font.render(tip, True, (255, 255, 255))
+            bg_rect = tip_surf.get_rect()
+            bg_rect.topleft = (mouse_pos[0] + 12, mouse_pos[1] + 12 + i*20)
+            pygame.draw.rect(surface, (20, 20, 20), bg_rect.inflate(6, 4))
+            pygame.draw.rect(surface, (255, 255, 0), bg_rect.inflate(6, 4), 1)
+            surface.blit(tip_surf, bg_rect.topleft)
 
     def update_from_sliders(self):
         # Update internal values from all sliders
@@ -922,23 +1049,24 @@ class Layer:
             self.composite_length_seed = new_lseed
             changed = True
 
-        new_show = self.sliders[15].value
+        new_show = self.checkboxes[0].value
         if new_show != self.draw_composite_nodes:
-            self.draw_composite_nodes = new_show
+            self.draw_composite_nodes = int(new_show)
 
-        new_dup = self.sliders[16].value
+        new_dup = self.checkboxes[1].value
         if new_dup != self.use_duplicate_mode:
-            self.use_duplicate_mode = new_dup
+            self.use_duplicate_mode = int(new_dup)
             changed = True
 
-        new_fill = self.sliders[17].value
+        new_fill = self.checkboxes[2].value
         if new_fill != self.fill_cycles:
-            self.fill_cycles = new_fill
+            self.fill_cycles = int(new_fill)
 
-        new_post = self.sliders[18].value
+
+        new_post = self.sliders[15].value
         self.post_process_intensity = new_post
 
-        new_splat = self.sliders[19].value
+        new_splat = self.sliders[16].value
         self.splatters = new_splat
 
         if changed:
@@ -1133,6 +1261,14 @@ class Layer:
 ###############################
 layers = []
 active_layer_index = 0
+columns = 4
+max_layers = 8
+tab_w = 75
+tab_h = 30
+x0 = 10
+y0 = TOP_PANEL_HEIGHT + 90
+gap_x = 5
+gap_y = 5
 
 def create_new_layer(name):
     layer = Layer(name)
@@ -1147,15 +1283,6 @@ def switch_to_layer(i):
         active_layer_index = len(layers) - 1
 
 def draw_layer_tabs(surface, mouse_pos):
-    columns = 3
-    max_layers = 6
-    tab_w = 80
-    tab_h = 30
-    x0 = 10
-    y0 = TOP_PANEL_HEIGHT + 90
-    gap_x = 5
-    gap_y = 5
-
     for i, layer in enumerate(layers):
         if i >= max_layers:
             break
@@ -1171,14 +1298,6 @@ def draw_layer_tabs(surface, mouse_pos):
         surface.blit(txt_surf, (rect.x + 5, rect.y + 5))
 
 def check_tab_click(mouse_pos):
-    columns = 3
-    max_layers = 6
-    tab_w = 80
-    tab_h = 30
-    x0 = 10
-    y0 = TOP_PANEL_HEIGHT + 90
-    gap_x = 5
-    gap_y = 5
     for i, layer in enumerate(layers):
         if i >= max_layers:
             break
