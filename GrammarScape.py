@@ -19,7 +19,7 @@ WIDTH, HEIGHT = 1400, 900 # Total window dimensions.
 TOP_PANEL_HEIGHT = 30     # Height of the top instructions panel.
 
 # Left GUI panel for sliders/buttons
-GUI_PANEL_WIDTH = 300
+GUI_PANEL_WIDTH = 350
 
 # Panels:
 MAIN_PANEL_WIDTH = 550      # primary (base) graph
@@ -746,6 +746,12 @@ class Layer:
         self.camera_yaw = 0.0
         self.camera_pitch = 0.0
 
+        # Post-process Paint Effects
+        self.post_process_intensity = 0
+        self.splatters = 0
+
+        # Sliders ------------------------
+
         # Build sliders (GUI)
         slider_x = 10
         slider_y = TOP_PANEL_HEIGHT + 200
@@ -753,10 +759,6 @@ class Layer:
         slider_gap = 35
         smaller_gap = 20
         s_height = 16
-
-        # Post-process Paint Effects
-        self.post_process_intensity = 0
-        self.splatters = 0
 
         self.sliders = []
         # 1) Edge Color (R, G, B) – label them simply "R", "G", "B"
