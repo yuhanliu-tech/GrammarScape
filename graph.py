@@ -1,5 +1,6 @@
 import math
 import pygame
+import random
 
 import global_vars
 
@@ -292,3 +293,53 @@ def fill_composite_cycles_with_intersections(layer, surface, panel_rect,
 
     # Finally, blit the temporary surface onto the main surface
     surface.blit(cycle_surf, (panel_rect.x, panel_rect.y))
+
+
+###############################
+# Edge Helper Functions
+###############################
+
+def recalc_edge_slopes(g):
+    for n1, pos in enumerate(g.nodes):
+        for n2 in g.adjacency_list.get(n1, []):
+            dx = g.nodes[n2][0] - pos[0]
+            dy = g.nodes[n2][1] - pos[1]
+            slope = math.atan2(dy, dx)
+            g.edge_slopes[(n1, n2)] = slope
+            g.edge_slopes[(n2, n1)] = math.atan2(-dy, -dx)
+
+def get_edge_points(start, end, noise_intensity, curve_intensity, segments=20):
+    # Computes a list of points along an edge between start and end.
+    # Also applies a curve (via a control point) and random noise.
+    if curve_intensity > 0:
+        mid = ((start[0]+end[0])*0.5, (start[1]+end[1])*0.5)
+        dx = end[0] - start[0]
+        dy = end[1] - start[1]
+        length = math.hypot(dx, dy)
+        perp = (-dy/length, dx/length) if length != 0 else (0, 0)
+        control = (mid[0] + perp[0]*curve_intensity, mid[1] + perp[1]*curve_intensity)
+    else:
+        control = None
+
+    pts = []
+    for i in range(segments+1):
+        t = i / segments
+        if control is not None:
+            x = (1 - t)**2 * start[0] + 2*(1 - t)*t*control[0] + t**2*end[0]
+            y = (1 - t)**2 * start[1] + 2*(1 - t)*t*control[1] + t**2*end[1]
+        else:
+            x = start[0] + t*(end[0]-start[0])
+            y = start[1] + t*(end[1]-start[1])
+        if noise_intensity > 0:
+            seed = hash((round(start[0],2), round(start[1],2), round(end[0],2), round(end[1],2), i))
+            rng = random.Random(seed)
+            x += rng.uniform(-noise_intensity, noise_intensity)
+            y += rng.uniform(-noise_intensity, noise_intensity)
+        pts.append((int(x), int(y)))
+    return pts
+
+def draw_jagged_or_curved_edge(surface, color, start, end, noise_intensity, curve_intensity, thickness=2):
+    # Draws an edge from start to end with jagged/curved effects based on the given intensities
+    pts = get_edge_points(start, end, noise_intensity, curve_intensity, segments=20)
+    for i in range(len(pts)-1):
+        pygame.draw.line(surface, color, pts[i], pts[i+1], thickness)

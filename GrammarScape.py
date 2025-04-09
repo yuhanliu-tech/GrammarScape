@@ -5,17 +5,21 @@ import json
 import random
 from PIL import Image
 import cv2
-import noise
 import numpy as np
+import tkinter as tk
+from tkinter import filedialog
 
 import graph
 import ui_comps
 import global_vars
 import postprocess
+import generate
 
 pygame.init()
 
-# Global Setup 
+###############################
+# User Interaction Setup
+###############################
 
 # Row 1: Clear, Save, New Layer
 clear_btn_rect = pygame.Rect(10, global_vars.TOP_PANEL_HEIGHT+10, 90, 25)
@@ -47,20 +51,67 @@ if canvas is None:
 # Convert from BGR to RGB for consistency
 canvas = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
 
+# Set up layers
+layers = []
+active_layer_index = 0
+columns = 4
+max_layers = 8
+tab_w = 75
+tab_h = 30
+x0 = 10
+y0 = global_vars.TOP_PANEL_HEIGHT + 90
+gap_x = 5
+gap_y = 5
+
+# text box
+enable_text_box = True
+default_instruction = "Ask Gemini for a simple graph... (Experimental)"
+graph_description = ""  # Stores the current input text
+
 ###############################
 # Utility Functions
 ###############################
 
-def recalc_edge_slopes(g):
-    for n1, pos in enumerate(g.nodes):
-        for n2 in g.adjacency_list.get(n1, []):
-            dx = g.nodes[n2][0] - pos[0]
-            dy = g.nodes[n2][1] - pos[1]
-            slope = math.atan2(dy, dx)
-            g.edge_slopes[(n1, n2)] = slope
-            g.edge_slopes[(n2, n1)] = math.atan2(-dy, -dx)
+def create_new_layer(name):
+    layer = ui_comps.Layer(name)
+    layers.append(layer)
 
-def load_project(filename):
+def switch_to_layer(i):
+    global active_layer_index
+    active_layer_index = i
+    if active_layer_index < 0:
+        active_layer_index = 0
+    if active_layer_index >= len(layers):
+        active_layer_index = len(layers) - 1
+
+def draw_layer_tabs(surface, mouse_pos):
+    for i, layer in enumerate(layers):
+        if i >= max_layers:
+            break
+        row = i // columns
+        col = i % columns
+        tab_x = x0 + col * (tab_w + gap_x)
+        tab_y = y0 + row * (tab_h + gap_y)
+        rect = pygame.Rect(tab_x, tab_y, tab_w, tab_h)
+        color = (70, 70, 70) if i == active_layer_index else (50, 50, 50)
+        pygame.draw.rect(surface, color, rect)
+        pygame.draw.rect(surface, (120, 120, 120), rect, 2)
+        txt_surf = global_vars.FONT.render(layer.name, True, (255, 255, 255))
+        surface.blit(txt_surf, (rect.x + 5, rect.y + 5))
+
+def check_tab_click(mouse_pos):
+    for i, layer in enumerate(layers):
+        if i >= max_layers:
+            break
+        row = i // columns
+        col = i % columns
+        tab_x = x0 + col * (tab_w + gap_x)
+        tab_y = y0 + row * (tab_h + gap_y)
+        rect = pygame.Rect(tab_x, tab_y, tab_w, tab_h)
+        if rect.collidepoint(mouse_pos):
+            switch_to_layer(i)
+
+def read_json(filename):
     global layers, active_layer_index
     try:
         with open(filename, "r") as f:
@@ -77,7 +128,7 @@ def load_project(filename):
         layer.graph.adjacency_list = {int(k): [int(n) for n in v] 
                                       for k, v in layer_data["graph"]["adjacency_list"].items()}
         # Recalculate edge slopes so that composite graph building works properly.
-        recalc_edge_slopes(layer.graph)
+        graph.recalc_edge_slopes(layer.graph)
         
         # Restore settings
         settings = layer_data["settings"]
@@ -133,6 +184,69 @@ def load_project(filename):
     active_layer_index = project_data.get("active_layer_index", 0)
     print("Project loaded successfully from", filename)
 
+def save_json(filename):
+    project_data = {"active_layer_index": active_layer_index, "layers": []}
+    for layer in layers:
+        layer_data = {
+            "name": layer.name,
+            "graph": {
+                "nodes": layer.graph.nodes,
+                "adjacency_list": layer.graph.adjacency_list
+            },
+            "settings": {
+                "edge_color": layer.edge_color,
+                "cycle_color": layer.cycle_color,
+                "node_color": layer.node_color,
+                "edge_noise": layer.edge_noise,
+                "edge_curve": layer.edge_curve,
+                "edge_thickness": layer.edge_thickness,
+                "numIterations": layer.numIterations,
+                "composite_seed": layer.composite_seed,
+                "composite_length_seed": layer.composite_length_seed,
+                "composite_tolerance": layer.composite_tolerance,
+                "connection_length": layer.connection_length,
+                "merge_threshold": layer.merge_threshold,
+                "draw_composite_nodes": layer.draw_composite_nodes,
+                "use_duplicate_mode": layer.use_duplicate_mode,
+                "fill_cycles": layer.fill_cycles,
+                "post_process_intensity": layer.post_process_intensity,
+                "splatters": layer.splatters,
+                "blur_amount": layer.blur_amount,
+                "camera_offset": layer.camera_offset,
+                "camera_zoom": layer.camera_zoom,
+                "camera_yaw": layer.camera_yaw,
+                "camera_pitch": layer.camera_pitch,
+            }
+        }
+        project_data["layers"].append(layer_data)
+    try:
+        with open(filename, "w") as f:
+            json.dump(project_data, f, indent=4)
+        print("Saved project JSON:", filename)
+    except Exception as e:
+        print("Failed to save project:", e)
+
+def save_project():
+    root = tk.Tk()
+    root.withdraw()
+    # Open file save dialog, filtering for JSON files.
+    file_path = filedialog.asksaveasfilename(
+        title="Save Project as JSON",
+        defaultextension=".json",
+        filetypes=[("JSON files", "*.json")]
+    )
+    if file_path:
+        save_json(file_path)
+
+def load_project():
+    # Initialize Tkinter and hide the main window.
+    root = tk.Tk()
+    root.withdraw()
+    # Open the file explorer dialog, filtering for JSON files.
+    file_path = filedialog.askopenfilename(title="Select JSON project file", filetypes=[("JSON files", "*.json")])
+    if file_path:
+        read_json(file_path)
+
 def snap_to_grid(pos):
     # Snaps a given position to the nearest grid intersection
     # The graph editor used to create the example graph leverages a grid 
@@ -151,94 +265,17 @@ def draw_button(surf, text, rect, mouse_pos, font):
     txt_surf = font.render(text, True, (255, 255, 255))
     surf.blit(txt_surf, (rect.x+5, rect.y+5))
 
-def get_edge_points(start, end, noise_intensity, curve_intensity, segments=20):
-    # Computes a list of points along an edge between start and end.
-    # Also applies a curve (via a control point) and random noise.
-    if curve_intensity > 0:
-        mid = ((start[0]+end[0])*0.5, (start[1]+end[1])*0.5)
-        dx = end[0] - start[0]
-        dy = end[1] - start[1]
-        length = math.hypot(dx, dy)
-        perp = (-dy/length, dx/length) if length != 0 else (0, 0)
-        control = (mid[0] + perp[0]*curve_intensity, mid[1] + perp[1]*curve_intensity)
-    else:
-        control = None
-
-    pts = []
-    for i in range(segments+1):
-        t = i / segments
-        if control is not None:
-            x = (1 - t)**2 * start[0] + 2*(1 - t)*t*control[0] + t**2*end[0]
-            y = (1 - t)**2 * start[1] + 2*(1 - t)*t*control[1] + t**2*end[1]
-        else:
-            x = start[0] + t*(end[0]-start[0])
-            y = start[1] + t*(end[1]-start[1])
-        if noise_intensity > 0:
-            seed = hash((round(start[0],2), round(start[1],2), round(end[0],2), round(end[1],2), i))
-            rng = random.Random(seed)
-            x += rng.uniform(-noise_intensity, noise_intensity)
-            y += rng.uniform(-noise_intensity, noise_intensity)
-        pts.append((int(x), int(y)))
-    return pts
-
-def draw_jagged_or_curved_edge(surface, color, start, end, noise_intensity, curve_intensity, thickness=2):
-    # Draws an edge from start to end with jagged/curved effects based on the given intensities
-    pts = get_edge_points(start, end, noise_intensity, curve_intensity, segments=20)
-    for i in range(len(pts)-1):
-        pygame.draw.line(surface, color, pts[i], pts[i+1], thickness)
-
-###############################
-# Global Multi-Layer Setup
-###############################
-layers = []
-active_layer_index = 0
-columns = 4
-max_layers = 8
-tab_w = 75
-tab_h = 30
-x0 = 10
-y0 = global_vars.TOP_PANEL_HEIGHT + 90
-gap_x = 5
-gap_y = 5
-
-def create_new_layer(name):
-    layer = ui_comps.Layer(name)
-    layers.append(layer)
-
-def switch_to_layer(i):
-    global active_layer_index
-    active_layer_index = i
-    if active_layer_index < 0:
-        active_layer_index = 0
-    if active_layer_index >= len(layers):
-        active_layer_index = len(layers) - 1
-
-def draw_layer_tabs(surface, mouse_pos):
-    for i, layer in enumerate(layers):
-        if i >= max_layers:
-            break
-        row = i // columns
-        col = i % columns
-        tab_x = x0 + col * (tab_w + gap_x)
-        tab_y = y0 + row * (tab_h + gap_y)
-        rect = pygame.Rect(tab_x, tab_y, tab_w, tab_h)
-        color = (70, 70, 70) if i == active_layer_index else (50, 50, 50)
-        pygame.draw.rect(surface, color, rect)
-        pygame.draw.rect(surface, (120, 120, 120), rect, 2)
-        txt_surf = global_vars.FONT.render(layer.name, True, (255, 255, 255))
-        surface.blit(txt_surf, (rect.x + 5, rect.y + 5))
-
-def check_tab_click(mouse_pos):
-    for i, layer in enumerate(layers):
-        if i >= max_layers:
-            break
-        row = i // columns
-        col = i % columns
-        tab_x = x0 + col * (tab_w + gap_x)
-        tab_y = y0 + row * (tab_h + gap_y)
-        rect = pygame.Rect(tab_x, tab_y, tab_w, tab_h)
-        if rect.collidepoint(mouse_pos):
-            switch_to_layer(i)
+def capture_image():
+    right_rect = pygame.Rect(
+                global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH,
+                global_vars.TOP_PANEL_HEIGHT,
+                global_vars.RIGHT_PANEL_WIDTH,
+                global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT
+            )
+    capture_fname = f"captures/{layers[active_layer_index].name}_capture.png"
+    subsurf = global_vars.screen.subsurface(right_rect)
+    pygame.image.save(subsurf, capture_fname)
+    print("Captured right panel image:", capture_fname)
 
 ###############################
 # Initialize a few layers
@@ -260,26 +297,36 @@ while running:
             running = False
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
+
+            # Check if clicking inside the text box
+            if generate.text_box_rect.collidepoint(event.pos) and enable_text_box:
+                generate.text_box_active = True
+                if graph_description == "" or graph_description == default_instruction:
+                    graph_description = ""
+            else:
+                generate.text_box_active = False
+
             if event.button == 1:
                 mouse_click = True
                 check_tab_click(event.pos)
                 main_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
                                         global_vars.MAIN_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
                 if main_rect.collidepoint(event.pos):
-                    local_x = event.pos[0] - main_rect.x
-                    local_y = event.pos[1] - main_rect.y
-                    L = layers[active_layer_index]
-                    n_idx = None
-                    for i, (nx, ny) in enumerate(L.graph.nodes):
-                        if math.dist((nx, ny), (local_x, local_y)) < global_vars.NODE_SIZE:
-                            n_idx = i
-                            break
-                    if n_idx is None:
-                        gx, gy = snap_to_grid((local_x, local_y))
-                        L.graph.add_node((gx, gy))
-                        L.build_composite_graph()
-                    else:
-                        selected_node = n_idx
+                    if not generate.text_box_rect.collidepoint(event.pos):
+                        local_x = event.pos[0] - main_rect.x
+                        local_y = event.pos[1] - main_rect.y
+                        L = layers[active_layer_index]
+                        n_idx = None
+                        for i, (nx, ny) in enumerate(L.graph.nodes):
+                            if math.dist((nx, ny), (local_x, local_y)) < global_vars.NODE_SIZE:
+                                n_idx = i
+                                break
+                        if n_idx is None:
+                            gx, gy = snap_to_grid((local_x, local_y))
+                            L.graph.add_node((gx, gy))
+                            L.build_composite_graph()
+                        else:
+                            selected_node = n_idx
 
                 right_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
                                          global_vars.RIGHT_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
@@ -300,6 +347,19 @@ while running:
                 if right_rect.collidepoint(event.pos):
                     right_panel_right_dragging = True
                     last_mouse_right = event.pos
+
+        # Handle key events for text input when the text box is active.
+        elif event.type == pygame.KEYDOWN:
+            if generate.text_box_active:
+                if event.key == pygame.K_RETURN:
+                    # When the user presses Enter, generate the graph from the description.
+                    generate.generate_and_draw_graph(graph_description, layers, active_layer_index)
+                    graph_description = ""  # Clear the input after processing.
+                elif event.key == pygame.K_BACKSPACE:
+                    graph_description = graph_description[:-1]
+                else:
+                    # Append any other character to the graph description.
+                    graph_description += event.unicode
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
@@ -352,60 +412,16 @@ while running:
             L = layers[active_layer_index]
             L.graph = graph.Graph()
             L.build_composite_graph()
-        if save_btn_rect.collidepoint(mouse_pos):
-            # --- Save the entire project as JSON ---
-            project_data = {"active_layer_index": active_layer_index, "layers": []}
-            for layer in layers:
-                layer_data = {
-                    "name": layer.name,
-                    "graph": {
-                        "nodes": layer.graph.nodes,
-                        "adjacency_list": layer.graph.adjacency_list
-                    },
-                    "settings": {
-                        "edge_color": layer.edge_color,
-                        "cycle_color": layer.cycle_color,
-                        "node_color": layer.node_color,
-                        "edge_noise": layer.edge_noise,
-                        "edge_curve": layer.edge_curve,
-                        "edge_thickness": layer.edge_thickness,
-                        "numIterations": layer.numIterations,
-                        "composite_seed": layer.composite_seed,
-                        "composite_length_seed": layer.composite_length_seed,
-                        "composite_tolerance": layer.composite_tolerance,
-                        "connection_length": layer.connection_length,
-                        "merge_threshold": layer.merge_threshold,
-                        "draw_composite_nodes": layer.draw_composite_nodes,
-                        "use_duplicate_mode": layer.use_duplicate_mode,
-                        "fill_cycles": layer.fill_cycles,
-                        "post_process_intensity": layer.post_process_intensity,
-                        "splatters": layer.splatters,
-                        "camera_offset": layer.camera_offset,
-                        "camera_zoom": layer.camera_zoom,
-                        "camera_yaw": layer.camera_yaw,
-                        "camera_pitch": layer.camera_pitch,
-                    }
-                }
-                project_data["layers"].append(layer_data)
-            fname = "jsons/project.json"
-            with open(fname, "w") as f:
-                json.dump(project_data, f, indent=4)
-            print("Saved project JSON:", fname)
 
+        if save_btn_rect.collidepoint(mouse_pos):
+            save_project()
+        
         if capture_btn_rect.collidepoint(mouse_pos):
-            # Capture image of the right panel
-            right_rect = pygame.Rect(
-                global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH,
-                global_vars.TOP_PANEL_HEIGHT,
-                global_vars.RIGHT_PANEL_WIDTH,
-                global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT
-            )
-            capture_fname = f"captures/{layers[active_layer_index].name}_capture.png"
-            subsurf = global_vars.screen.subsurface(right_rect)
-            pygame.image.save(subsurf, capture_fname)
-            print("Captured right panel image:", capture_fname)
+            capture_image()
+
         if load_json_btn_rect.collidepoint(mouse_pos):
-            load_project("jsons/project.json")
+            load_project()
+
         if new_layer_btn_rect.collidepoint(mouse_pos):
             nm = f"Layer {len(layers)+1}"
             create_new_layer(nm)
@@ -419,8 +435,7 @@ while running:
     info_txt = (
         "Left Panel: GUI || "
         "Middle Panel: Graph Editor ||  "
-        "Right Panel: Painting & Camera Manipulation || "
-        "Ready to Load jsons/project.json || "
+        "Right Panel: Painting & Camera Manipulation "
     )
     global_vars.screen.blit(global_vars.INSTR_FONT.render(info_txt, True, (230, 230, 230)), (10, 10))
 
@@ -428,7 +443,7 @@ while running:
     pygame.draw.rect(global_vars.screen, (40, 40, 40), gui_rect)
     pygame.draw.rect(global_vars.screen, (80, 80, 80), gui_rect, 2)
 
-    # --- Drawing the Top GUI Rows ---
+    # Drawing the Top GUI Rows
     
     # Row 1: Control buttons
     draw_button(global_vars.screen, "Clear", clear_btn_rect, mouse_pos, global_vars.FONT)
@@ -450,6 +465,22 @@ while running:
         pygame.draw.line(global_vars.screen, global_vars.GRID_COLOR, (gx, global_vars.TOP_PANEL_HEIGHT), (gx, global_vars.HEIGHT), 1)
     for gy in range(global_vars.TOP_PANEL_HEIGHT, global_vars.HEIGHT, global_vars.GRID_SIZE):
         pygame.draw.line(global_vars.screen, global_vars.GRID_COLOR, (global_vars.GUI_PANEL_WIDTH, gy), (global_vars.GUI_PANEL_WIDTH+global_vars.MAIN_PANEL_WIDTH, gy), 1)
+
+    # Draw the text box for graph description on top of the middle panel.
+    if enable_text_box:
+        pygame.draw.rect(global_vars.screen, (200, 200, 200), generate.text_box_rect, 2)
+
+        if generate.text_box_active:
+        # Use a lighter background to indicate active state.
+            pygame.draw.rect(global_vars.screen, (230, 230, 230), generate.text_box_rect)
+        else:
+            # Use the normal background for inactive state.
+            pygame.draw.rect(global_vars.screen, (200, 200, 200), generate.text_box_rect)
+
+        display_text = graph_description if graph_description != "" else default_instruction
+        text_color = (0, 0, 0) if graph_description != "" else (150, 150, 150)
+        txt_surface = global_vars.FONT.render(display_text, True, text_color)
+        global_vars.screen.blit(txt_surface, (generate.text_box_rect.x + 5, generate.text_box_rect.y + 5))
 
     L = layers[active_layer_index]
 
@@ -473,7 +504,7 @@ while running:
                 x2, y2 = L.graph.nodes[n2]
                 st = (x1 + global_vars.GUI_PANEL_WIDTH, y1 + global_vars.TOP_PANEL_HEIGHT)
                 en = (x2 + global_vars.GUI_PANEL_WIDTH, y2 + global_vars.TOP_PANEL_HEIGHT)
-                draw_jagged_or_curved_edge(global_vars.screen, L.edge_color, st, en,
+                graph.draw_jagged_or_curved_edge(global_vars.screen, L.edge_color, st, en,
                                            L.edge_noise, L.edge_curve, L.edge_thickness)
 
     for i, (nx, ny) in enumerate(L.graph.nodes):
@@ -482,7 +513,7 @@ while running:
         pygame.draw.circle(global_vars.screen, L.node_color, (sx, sy), global_vars.NODE_SIZE // 2)
         pygame.draw.circle(global_vars.screen, L.node_color, (sx, sy), global_vars.NODE_SIZE // 2, 1)
 
-    # --- Right panel: Composite view ---
+    # Right panel: Composite view 
     right_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
                              global_vars.RIGHT_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
     pygame.draw.rect(global_vars.screen, global_vars.BG_COLOR, right_rect)
@@ -539,7 +570,7 @@ while running:
             p2 = transformed[j]
             st = (int(p1[0] * scale_3d + offset_x), int(p1[1] * scale_3d + offset_y))
             en = (int(p2[0] * scale_3d + offset_x), int(p2[1] * scale_3d + offset_y))
-            draw_jagged_or_curved_edge(layer_surf, ly.edge_color, st, en,
+            graph.draw_jagged_or_curved_edge(layer_surf, ly.edge_color, st, en,
                                        ly.edge_noise, ly.edge_curve, ly.edge_thickness)
     
         if ly.draw_composite_nodes == 1:
@@ -566,7 +597,7 @@ while running:
     right_panel_surf.blit(post_group, (0, 0))
     right_panel_surf.blit(top_group, (0, 0))
 
-    # --- Apply painterly effect ---
+    # Apply painterly effect
     right_panel_surf = postprocess.apply_painterly_effect(post_group, top_group,
                                               L.post_process_intensity,
                                               global_vars.RIGHT_PANEL_WIDTH, right_rect.height,
