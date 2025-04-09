@@ -41,45 +41,46 @@
                     ]
                 }
             },
-            "settings": {
-                "edge_color": [
-                    200,
-                    200,
-                    200
-                ],
-                "cycle_color": [
-                    156,
-                    165,
-                    120,
-                    150
-                ],
-                "node_color": [
-                    255,
-                    255,
-                    255
-                ],
-                "edge_noise": 0,
-                "edge_curve": 0,
-                "edge_thickness": 2,
-                "numIterations": 3,
-                "composite_seed": 0,
-                "composite_length_seed": 0,
-                "composite_tolerance": 0.0873,
-                "connection_length": 100,
-                "merge_threshold": 10,
-                "draw_composite_nodes": 1,
-                "use_duplicate_mode": 1,
-                "fill_cycles": 1,
-                "post_process_intensity": 0,
-                "splatters": 25,
-                "camera_offset": [
-                    0,
-                    0
-                ],
-                "camera_zoom": 2.1435888100000016,
-                "camera_yaw": 0.0,
-                "camera_pitch": 0.0
-            }
+          "settings": {
+            "edge_color": [
+              200,
+              200,
+              200
+            ],
+            "cycle_color": [
+              156,
+              165,
+              120,
+              150
+            ],
+            "node_color": [
+              255,
+              255,
+              255
+            ],
+            "edge_noise": 0,
+            "edge_curve": 0,
+            "edge_thickness": 2,
+            "numIterations": 3,
+            "composite_seed": 0,
+            "composite_length_seed": 0,
+            "composite_tolerance": 0.0873,
+            "connection_length": 100,
+            "merge_threshold": 10,
+            "draw_composite_nodes": 1,
+            "use_duplicate_mode": 1,
+            "fill_cycles": 1,
+            "post_process_intensity": 0,
+            "splatters": 25,
+            "blur_amount": 0,
+            "camera_offset": [
+              0,
+              0
+            ],
+            "camera_zoom": 2.1435888100000016,
+            "camera_yaw": 0.0,
+            "camera_pitch": 0.0
+          }
         },
         {
             "name": "Layer 2",
@@ -121,45 +122,46 @@
                     ]
                 }
             },
-            "settings": {
-                "edge_color": [
-                    59,
-                    71,
-                    93
-                ],
-                "cycle_color": [
-                    200,
-                    200,
-                    200,
-                    150
-                ],
-                "node_color": [
-                    255,
-                    255,
-                    255
-                ],
-                "edge_noise": 12,
-                "edge_curve": 0,
-                "edge_thickness": 11,
-                "numIterations": 10,
-                "composite_seed": 646,
-                "composite_length_seed": 0,
-                "composite_tolerance": 0.0873,
-                "connection_length": 100,
-                "merge_threshold": 10,
-                "draw_composite_nodes": 0,
-                "use_duplicate_mode": 0,
-                "fill_cycles": 1,
-                "post_process_intensity": 0,
-                "splatters": 14,
-                "camera_offset": [
-                    20,
-                    207
-                ],
-                "camera_zoom": 0.25418658283290013,
-                "camera_yaw": 0.0,
-                "camera_pitch": 0.0
-            }
+          "settings": {
+            "edge_color": [
+              59,
+              71,
+              93
+            ],
+            "cycle_color": [
+              200,
+              200,
+              200,
+              150
+            ],
+            "node_color": [
+              255,
+              255,
+              255
+            ],
+            "edge_noise": 12,
+            "edge_curve": 0,
+            "edge_thickness": 11,
+            "numIterations": 10,
+            "composite_seed": 646,
+            "composite_length_seed": 0,
+            "composite_tolerance": 0.0873,
+            "connection_length": 100,
+            "merge_threshold": 10,
+            "draw_composite_nodes": 0,
+            "use_duplicate_mode": 0,
+            "fill_cycles": 1,
+            "post_process_intensity": 0,
+            "splatters": 14,
+            "blur_amount": 0,
+            "camera_offset": [
+              20,
+              207
+            ],
+            "camera_zoom": 0.25418658283290013,
+            "camera_yaw": 0.0,
+            "camera_pitch": 0.0
+          }
         },
         {
             "name": "Layer 3",
@@ -219,45 +221,46 @@
                     ]
                 }
             },
-            "settings": {
-                "edge_color": [
-                    255,
-                    255,
-                    255
-                ],
-                "cycle_color": [
-                    81,
-                    112,
-                    143,
-                    150
-                ],
-                "node_color": [
-                    255,
-                    255,
-                    255
-                ],
-                "edge_noise": 0,
-                "edge_curve": 12,
-                "edge_thickness": 12,
-                "numIterations": 6,
-                "composite_seed": 654,
-                "composite_length_seed": 0,
-                "composite_tolerance": 0.0873,
-                "connection_length": 100,
-                "merge_threshold": 10,
-                "draw_composite_nodes": 1,
-                "use_duplicate_mode": 0,
-                "fill_cycles": 1,
-                "post_process_intensity": 10,
-                "splatters": 16,
-                "camera_offset": [
-                    307,
-                    419
-                ],
-                "camera_zoom": 0.26858767899130037,
-                "camera_yaw": -0.030000000000000016,
-                "camera_pitch": -0.12000000000000005
-            }
+          "settings": {
+            "edge_color": [
+              255,
+              255,
+              255
+            ],
+            "cycle_color": [
+              81,
+              112,
+              143,
+              150
+            ],
+            "node_color": [
+              255,
+              255,
+              255
+            ],
+            "edge_noise": 0,
+            "edge_curve": 12,
+            "edge_thickness": 12,
+            "numIterations": 6,
+            "composite_seed": 654,
+            "composite_length_seed": 0,
+            "composite_tolerance": 0.0873,
+            "connection_length": 100,
+            "merge_threshold": 10,
+            "draw_composite_nodes": 1,
+            "use_duplicate_mode": 0,
+            "fill_cycles": 1,
+            "post_process_intensity": 10,
+            "splatters": 16,
+            "blur_amount": 0,
+            "camera_offset": [
+              307,
+              419
+            ],
+            "camera_zoom": 0.26858767899130037,
+            "camera_yaw": -0.030000000000000016,
+            "camera_pitch": -0.12000000000000005
+          }
         }
     ]
 }

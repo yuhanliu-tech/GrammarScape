@@ -609,6 +609,34 @@ def add_paint_splatters(surface, transformed_nodes, palette, splatter_count=20, 
             splatter_color = rng.choice(palette)
             pygame.draw.circle(surface, splatter_color, (x + dx, y + dy), small_radius)
 
+def gaussian_blur(surface, blur_amount):
+    if blur_amount <= 0:
+        return surface
+
+    arr_rgb = pygame.surfarray.array3d(surface).transpose(1, 0, 2)
+    arr_alpha = pygame.surfarray.array_alpha(surface).T
+
+    # Convert RGB to BGR for OpenCV
+    bgr = cv2.cvtColor(arr_rgb, cv2.COLOR_RGB2BGR)
+
+    # Kernel size must be odd and > 1
+    ksize = max(3, int(blur_amount * 3) * 2 + 1)
+
+    # Apply blur to RGB and Alpha separately
+    bgr_blurred = cv2.GaussianBlur(bgr, (ksize, ksize), sigmaX=0)
+    alpha_blurred = cv2.GaussianBlur(arr_alpha, (ksize, ksize), sigmaX=0)
+
+    # Convert back to RGB for Pygame
+    rgb_blurred = cv2.cvtColor(bgr_blurred, cv2.COLOR_BGR2RGB)
+
+    # Merge RGB and Alpha
+    final_arr = np.dstack((rgb_blurred, alpha_blurred))
+
+    # Convert to Pygame surface
+    surf = pygame.image.frombuffer(final_arr.tobytes(), surface.get_size(), "RGBA")
+    return surf.convert_alpha()
+
+
 ###############################
 # Utility Functions
 ###############################
@@ -660,6 +688,7 @@ def load_project(filename):
         layer.fill_cycles = settings["fill_cycles"]
         layer.post_process_intensity = settings["post_process_intensity"]
         layer.splatters = settings["splatters"]
+        layer.blur_amount = settings["blur_amount"]
         layer.camera_offset = settings["camera_offset"]
         layer.camera_zoom = settings["camera_zoom"]
         layer.camera_yaw = settings["camera_yaw"]
@@ -686,6 +715,7 @@ def load_project(filename):
         layer.checkboxes[2].value = layer.fill_cycles
         layer.sliders[15].value = layer.post_process_intensity
         layer.sliders[16].value = layer.splatters
+        layer.sliders[17].value = layer.blur_amount
 
         # Rebuild the composite graph now that the base graph is fully restored
         layer.build_composite_graph()
@@ -812,6 +842,7 @@ class Layer:
         # Post-process Paint Effects
         self.post_process_intensity = 0
         self.splatters = 0
+        self.blur_amount = 0
 
         # Checkboxes ----------------------
 
@@ -868,7 +899,7 @@ class Layer:
         slider_y += smaller_gap
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 255,
                                    self.node_color[2], "B", True))
-        slider_y += slider_gap + 35
+        slider_y += slider_gap + 30
 
         # 4) Noise & Curve
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 50,
@@ -881,7 +912,7 @@ class Layer:
         # Edge thickness
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 15,
                                    self.edge_thickness, "Thickness", True))
-        slider_y += slider_gap + 35
+        slider_y += slider_gap + 30
 
         # Iterations, seeds
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 1, 10,
@@ -892,7 +923,7 @@ class Layer:
         slider_y += slider_gap
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 1000,
                                    self.composite_length_seed, "Seed - Edge Lengths", True))
-        slider_y += slider_gap + 35
+        slider_y += slider_gap + 30
 
         # Post Process slider: 0..10
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height,
@@ -902,6 +933,11 @@ class Layer:
         # Splatter size and frequency: 0..25
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height,
                                    0, 25, 0, "Splatters", True))
+        slider_y += slider_gap
+
+        # Blur effect slider: 0...10
+        self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height,
+                           0, 10, 0, "Blur", True))
         slider_y += slider_gap
 
     def process_sliders(self, events):
@@ -992,7 +1028,7 @@ class Layer:
             self.sliders[i].draw(surface, mouse_pos, font, show_label=True, inline=True)
 
         # --- Post-process Effects Section ---
-        post_label = font.render("Post-process Effects", True, (255, 255, 0))
+        post_label = font.render("Post-Process Effects", True, (255, 255, 0))
         post_label_pos = (self.sliders[15].rect.x, self.sliders[15].rect.y - 25)
         post_rect = post_label.get_rect(topleft=post_label_pos)
         surface.blit(post_label, post_label_pos)
@@ -1068,6 +1104,8 @@ class Layer:
 
         new_splat = self.sliders[16].value
         self.splatters = new_splat
+
+        self.blur_amount = self.sliders[17].value  
 
         if changed:
             self.build_composite_graph()
@@ -1623,6 +1661,9 @@ while running:
                                                      minx, miny, bw, bh,
                                                      perspective_distance,
                                                      RIGHT_PANEL_WIDTH, right_rect.height)
+        
+        if i <= active_layer_index and ly.blur_amount > 0:
+            layer_surf = gaussian_blur(layer_surf, ly.blur_amount)
     
         if i <= active_layer_index:
             post_group.blit(layer_surf, (0, 0))
