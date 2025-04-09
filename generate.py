@@ -6,7 +6,7 @@ import graph
 import random
 
 # DO NOT COMMIT API KEY
-client = "INSERT API KEY HERE"
+client = "INSERT KEY"
 
 ###############################
 # Text Box Setup for Graph Description
@@ -34,8 +34,6 @@ def parse_graph_string(graph_str, graph_obj):
             start = i
             while i < n and graph_str[i] != ')':
                 i += 1
-            if i == n:
-                raise ValueError("Missing closing parenthesis in graph string.")
             token = graph_str[start:i]
             tokens.append("(" + token + ")")
             i += 1  # Skip the closing ')'
@@ -54,32 +52,17 @@ def parse_graph_string(graph_str, graph_obj):
     # tokens[node_count+1] : number of edges
     # tokens[node_count+2 .. end] : edge pairs, e.g., "(e1, e2)"
     
-    if len(tokens) < 2:
-        raise ValueError("Graph description string is too short.")
-    
     # Parse the node count.
     node_count = int(tokens[0])
-    
-    # Check that there are enough tokens for nodes and an edge count.
-    if len(tokens) < 1 + node_count + 1:
-        raise ValueError("Not enough tokens to parse node count and node coordinates.")
     
     # Parse the edge count. It is the token right after the node tokens.
     edge_count = int(tokens[node_count + 1])
     
-    # Total tokens should equal: 1 (node count) + node_count + 1 (edge count) + edge_count.
-    if len(tokens) != 1 + node_count + 1 + edge_count:
-        raise ValueError("Token count does not match declared numbers of nodes and edges.")
-    
     # Process node tokens.
     for token in tokens[1:1 + node_count]:
-        if token[0] != '(' or token[-1] != ')':
-            raise ValueError("Expected node token to be enclosed in parentheses.")
         # Remove the enclosing parentheses.
         inner = token[1:-1]
         parts = inner.split(',')
-        if len(parts) != 2:
-            raise ValueError("Each node coordinate must have exactly two numbers.")
         x = int(parts[0].strip())
         y = int(parts[1].strip())
         graph_obj.graph.add_node((x, y))
@@ -87,12 +70,8 @@ def parse_graph_string(graph_str, graph_obj):
     # Process edge tokens.
     edge_tokens = tokens[1 + node_count + 1:]
     for token in edge_tokens:
-        if token[0] != '(' or token[-1] != ')':
-            raise ValueError("Expected edge token to be enclosed in parentheses.")
         inner = token[1:-1]
         parts = inner.split(',')
-        if len(parts) != 2:
-            raise ValueError("Each edge must consist of exactly two node indices.")
         src = int(parts[0].strip())
         dest = int(parts[1].strip())
         graph_obj.graph.add_edge(src, dest)
@@ -106,7 +85,7 @@ def generate_and_draw_graph(description, layers, active_layer_index):
     # Example logic: create a specific pattern based on keywords
     desc = description.lower()
 
-    bot_message = "Draw a simple " + desc + "as a graph in the form of nodes and edges. Format your response in the following way: numNodes, (n1, n2), (n3, n4), numEdges, (e1, e2), (e3, e4). For example, to draw a triangle, return: 3, (100,100), (150,50), (200,100), 3, (0,1), (1,2), (2,0)"
+    bot_message = "Draw a simple image of a " + desc + " as a graph in the form of nodes and edges. Format your response in the following way: numNodes, (n1, n2), (n3, n4), numEdges, (e1, e2), (e3, e4). For example, to draw a triangle, return: 3, (100,100), (150,50), (200,100), 3, (0,1), (1,2), (2,0)"
 
     response = client.models.generate_content(
         model="gemini-2.0-flash", contents=bot_message
