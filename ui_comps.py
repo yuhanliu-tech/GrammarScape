@@ -6,6 +6,21 @@ import graph
 import global_vars
 
 ###############################
+# Button Functions
+###############################
+
+def draw_button(surf, text, rect, mouse_pos, font):
+    color = (80, 80, 80)
+    hover = (120, 120, 120)
+    if rect.collidepoint(mouse_pos):
+        pygame.draw.rect(surf, hover, rect)
+    else:
+        pygame.draw.rect(surf, color, rect)
+    txt_surf = font.render(text, True, (255, 255, 255))
+    surf.blit(txt_surf, (rect.x+5, rect.y+5))
+
+
+###############################
 # Checkbox Class
 ###############################
 

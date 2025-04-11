@@ -255,16 +255,6 @@ def snap_to_grid(pos):
     x, y = pos
     return (round(x / global_vars.GRID_SIZE) * global_vars.GRID_SIZE, round(y / global_vars.GRID_SIZE) * global_vars.GRID_SIZE)
 
-def draw_button(surf, text, rect, mouse_pos, font):
-    color = (80, 80, 80)
-    hover = (120, 120, 120)
-    if rect.collidepoint(mouse_pos):
-        pygame.draw.rect(surf, hover, rect)
-    else:
-        pygame.draw.rect(surf, color, rect)
-    txt_surf = font.render(text, True, (255, 255, 255))
-    surf.blit(txt_surf, (rect.x+5, rect.y+5))
-
 def capture_image():
     right_rect = pygame.Rect(
                 global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH,
@@ -278,334 +268,315 @@ def capture_image():
     print("Captured right panel image:", capture_fname)
 
 ###############################
-# Initialize a few layers
-###############################
-create_new_layer("Layer 1")
-create_new_layer("Layer 2")
-create_new_layer("Layer 3")
-
-###############################
 # Main Loop
 ###############################
-while running:
-    events = pygame.event.get()
-    mouse_pos = pygame.mouse.get_pos()
-    mouse_click = False
 
-    for event in events:
-        if event.type == pygame.QUIT:
-            running = False
+def game_loop():
 
-        elif event.type == pygame.MOUSEBUTTONDOWN:
+    global running, selected_node, graph_description
+    global right_panel_left_dragging, right_panel_middle_dragging, right_panel_right_dragging
+    global last_mouse_left, last_mouse_middle, last_mouse_right
+    global minx, miny
 
-            # Check if clicking inside the text box
-            if generate.text_box_rect.collidepoint(event.pos) and enable_text_box:
-                generate.text_box_active = True
-                if graph_description == "" or graph_description == default_instruction:
-                    graph_description = ""
-            else:
-                generate.text_box_active = False
+    while running:
+        events = pygame.event.get()
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_click = False
 
-            if event.button == 1:
-                mouse_click = True
-                check_tab_click(event.pos)
-                main_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
-                                        global_vars.MAIN_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
-                if main_rect.collidepoint(event.pos):
-                    if not generate.text_box_rect.collidepoint(event.pos):
+        for event in events:
+            if event.type == pygame.QUIT:
+                running = False
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                # Check text box activation
+                if generate.text_box_rect.collidepoint(event.pos) and enable_text_box:
+                    generate.text_box_active = True
+                    if graph_description == "" or graph_description == default_instruction:
+                        graph_description = ""
+                else:
+                    generate.text_box_active = False
+
+                if event.button == 1:
+                    mouse_click = True
+                    check_tab_click(event.pos)
+                    main_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
+                                            global_vars.MAIN_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
+                    if main_rect.collidepoint(event.pos):
+                        if not generate.text_box_rect.collidepoint(event.pos):
+                            local_x = event.pos[0] - main_rect.x
+                            local_y = event.pos[1] - main_rect.y
+                            L = layers[active_layer_index]
+                            n_idx = None
+                            for i, (nx, ny) in enumerate(L.graph.nodes):
+                                if math.dist((nx, ny), (local_x, local_y)) < global_vars.NODE_SIZE:
+                                    n_idx = i
+                                    break
+                            if n_idx is None:
+                                gx, gy = snap_to_grid((local_x, local_y))
+                                L.graph.add_node((gx, gy))
+                                L.build_composite_graph()
+                            else:
+                                selected_node = n_idx
+
+                    right_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH,
+                                               global_vars.TOP_PANEL_HEIGHT,
+                                               global_vars.RIGHT_PANEL_WIDTH,
+                                               global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
+                    if right_rect.collidepoint(event.pos):
+                        right_panel_left_dragging = True
+                        last_mouse_left = event.pos
+
+                elif event.button == 2:
+                    right_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH,
+                                               global_vars.TOP_PANEL_HEIGHT,
+                                               global_vars.RIGHT_PANEL_WIDTH,
+                                               global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
+                    if right_rect.collidepoint(event.pos):
+                        right_panel_middle_dragging = True
+                        last_mouse_middle = event.pos
+
+                elif event.button == 3:
+                    right_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH,
+                                               global_vars.TOP_PANEL_HEIGHT,
+                                               global_vars.RIGHT_PANEL_WIDTH,
+                                               global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
+                    if right_rect.collidepoint(event.pos):
+                        right_panel_right_dragging = True
+                        last_mouse_right = event.pos
+
+            elif event.type == pygame.KEYDOWN:
+                if generate.text_box_active:
+                    if event.key == pygame.K_RETURN:
+                        generate.generate_and_draw_graph(graph_description, layers, active_layer_index)
+                        graph_description = ""
+                    elif event.key == pygame.K_BACKSPACE:
+                        graph_description = graph_description[:-1]
+                    else:
+                        graph_description += event.unicode
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:
+                    right_panel_left_dragging = False
+                    main_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
+                                            global_vars.MAIN_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
+                    if main_rect.collidepoint(event.pos) and selected_node is not None:
+                        L = layers[active_layer_index]
                         local_x = event.pos[0] - main_rect.x
                         local_y = event.pos[1] - main_rect.y
-                        L = layers[active_layer_index]
-                        n_idx = None
+                        tgt = None
                         for i, (nx, ny) in enumerate(L.graph.nodes):
                             if math.dist((nx, ny), (local_x, local_y)) < global_vars.NODE_SIZE:
-                                n_idx = i
+                                tgt = i
                                 break
-                        if n_idx is None:
-                            gx, gy = snap_to_grid((local_x, local_y))
-                            L.graph.add_node((gx, gy))
+                        if tgt is not None and tgt != selected_node:
+                            L.graph.add_edge(selected_node, tgt)
                             L.build_composite_graph()
-                        else:
-                            selected_node = n_idx
+                        selected_node = None
+                elif event.button == 2:
+                    right_panel_middle_dragging = False
+                elif event.button == 3:
+                    right_panel_right_dragging = False
 
-                right_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
-                                         global_vars.RIGHT_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
-                if right_rect.collidepoint(event.pos):
-                    right_panel_left_dragging = True
-                    last_mouse_left = event.pos
-
-            elif event.button == 2:
-                right_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
-                                         global_vars.RIGHT_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
-                if right_rect.collidepoint(event.pos):
-                    right_panel_middle_dragging = True
+            elif event.type == pygame.MOUSEMOTION:
+                if right_panel_middle_dragging:
+                    dx = event.pos[0] - last_mouse_middle[0]
+                    dy = event.pos[1] - last_mouse_middle[1]
+                    L = layers[active_layer_index]
+                    L.camera_offset[0] += dx
+                    L.camera_offset[1] += dy
                     last_mouse_middle = event.pos
-
-            elif event.button == 3:
-                right_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
-                                         global_vars.RIGHT_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
-                if right_rect.collidepoint(event.pos):
-                    right_panel_right_dragging = True
+                if right_panel_left_dragging:
+                    dy = event.pos[1] - last_mouse_left[1]
+                    L = layers[active_layer_index]
+                    L.camera_pitch += dy * 0.005
+                    last_mouse_left = event.pos
+                if right_panel_right_dragging:
+                    dx = event.pos[0] - last_mouse_right[0]
+                    L = layers[active_layer_index]
+                    L.camera_yaw += dx * 0.005
                     last_mouse_right = event.pos
 
-        # Handle key events for text input when the text box is active.
-        elif event.type == pygame.KEYDOWN:
-            if generate.text_box_active:
-                if event.key == pygame.K_RETURN:
-                    # When the user presses Enter, generate the graph from the description.
-                    generate.generate_and_draw_graph(graph_description, layers, active_layer_index)
-                    graph_description = ""  # Clear the input after processing.
-                elif event.key == pygame.K_BACKSPACE:
-                    graph_description = graph_description[:-1]
-                else:
-                    # Append any other character to the graph description.
-                    graph_description += event.unicode
-
-        elif event.type == pygame.MOUSEBUTTONUP:
-            if event.button == 1:
-                right_panel_left_dragging = False
-                main_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
-                                        global_vars.MAIN_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
-                if main_rect.collidepoint(event.pos) and selected_node is not None:
-                    L = layers[active_layer_index]
-                    local_x = event.pos[0] - main_rect.x
-                    local_y = event.pos[1] - main_rect.y
-                    tgt = None
-                    for i, (nx, ny) in enumerate(L.graph.nodes):
-                        if math.dist((nx, ny), (local_x, local_y)) < global_vars.NODE_SIZE:
-                            tgt = i
-                            break
-                    if tgt is not None and tgt != selected_node:
-                        L.graph.add_edge(selected_node, tgt)
-                        L.build_composite_graph()
-                    selected_node = None
-            elif event.button == 2:
-                right_panel_middle_dragging = False
-            elif event.button == 3:
-                right_panel_right_dragging = False
-
-        elif event.type == pygame.MOUSEMOTION:
-            if right_panel_middle_dragging:
-                dx = event.pos[0] - last_mouse_middle[0]
-                dy = event.pos[1] - last_mouse_middle[1]
+            elif event.type == pygame.MOUSEWHEEL:
                 L = layers[active_layer_index]
-                L.camera_offset[0] += dx
-                L.camera_offset[1] += dy
-                last_mouse_middle = event.pos
-            if right_panel_left_dragging:
-                dy = event.pos[1] - last_mouse_left[1]
+                L.camera_zoom *= (1 + event.y * 0.1)
+
+        # Check control button clicks
+        if mouse_click:
+            if clear_btn_rect.collidepoint(mouse_pos):
                 L = layers[active_layer_index]
-                L.camera_pitch += dy * 0.005
-                last_mouse_left = event.pos
-            if right_panel_right_dragging:
-                dx = event.pos[0] - last_mouse_right[0]
-                L = layers[active_layer_index]
-                L.camera_yaw += dx * 0.005
-                last_mouse_right = event.pos
+                L.graph = graph.Graph()
+                L.build_composite_graph()
 
-        elif event.type == pygame.MOUSEWHEEL:
-            L = layers[active_layer_index]
-            L.camera_zoom *= (1 + event.y * 0.1)
+            if save_btn_rect.collidepoint(mouse_pos):
+                save_project()
 
-    if mouse_click:
-        if clear_btn_rect.collidepoint(mouse_pos):
-            L = layers[active_layer_index]
-            L.graph = graph.Graph()
-            L.build_composite_graph()
+            if capture_btn_rect.collidepoint(mouse_pos):
+                capture_image()
 
-        if save_btn_rect.collidepoint(mouse_pos):
-            save_project()
-        
-        if capture_btn_rect.collidepoint(mouse_pos):
-            capture_image()
+            if load_json_btn_rect.collidepoint(mouse_pos):
+                load_project()
 
-        if load_json_btn_rect.collidepoint(mouse_pos):
-            load_project()
+            if new_layer_btn_rect.collidepoint(mouse_pos):
+                nm = f"Layer {len(layers) + 1}"
+                create_new_layer(nm)
 
-        if new_layer_btn_rect.collidepoint(mouse_pos):
-            nm = f"Layer {len(layers)+1}"
-            create_new_layer(nm)
+        L = layers[active_layer_index]
+        L.process_sliders(events)
+        L.update_from_sliders()
 
-    layers[active_layer_index].process_sliders(events)
-    layers[active_layer_index].update_from_sliders()
+        # Drawing sections
+        global_vars.screen.fill(global_vars.BG_COLOR)
+        top_rect = pygame.Rect(0, 0, global_vars.WIDTH, global_vars.TOP_PANEL_HEIGHT)
+        pygame.draw.rect(global_vars.screen, (50, 50, 50), top_rect)
+        info_txt = ("Left Panel: GUI || Middle Panel: Graph Editor || Right Panel: Painting & Camera Manipulation")
+        global_vars.screen.blit(global_vars.INSTR_FONT.render(info_txt, True, (230, 230, 230)), (10, 10))
 
-    global_vars.screen.fill(global_vars.BG_COLOR)
-    top_rect = pygame.Rect(0, 0, global_vars.WIDTH, global_vars.TOP_PANEL_HEIGHT)
-    pygame.draw.rect(global_vars.screen, (50, 50, 50), top_rect)
-    info_txt = (
-        "Left Panel: GUI || "
-        "Middle Panel: Graph Editor ||  "
-        "Right Panel: Painting & Camera Manipulation "
-    )
-    global_vars.screen.blit(global_vars.INSTR_FONT.render(info_txt, True, (230, 230, 230)), (10, 10))
+        # Draw GUI panel
+        gui_rect = pygame.Rect(0, global_vars.TOP_PANEL_HEIGHT, global_vars.GUI_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
+        pygame.draw.rect(global_vars.screen, (40, 40, 40), gui_rect)
+        pygame.draw.rect(global_vars.screen, (80, 80, 80), gui_rect, 2)
 
-    gui_rect = pygame.Rect(0, global_vars.TOP_PANEL_HEIGHT, global_vars.GUI_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
-    pygame.draw.rect(global_vars.screen, (40, 40, 40), gui_rect)
-    pygame.draw.rect(global_vars.screen, (80, 80, 80), gui_rect, 2)
+        ui_comps.draw_button(global_vars.screen, "Clear", clear_btn_rect, mouse_pos, global_vars.FONT)
+        ui_comps.draw_button(global_vars.screen, "Capture", capture_btn_rect, mouse_pos, global_vars.FONT)
+        ui_comps.draw_button(global_vars.screen, "New Layer", new_layer_btn_rect, mouse_pos, global_vars.FONT)
+        ui_comps.draw_button(global_vars.screen, "Load JSON", load_json_btn_rect, mouse_pos, global_vars.FONT)
+        ui_comps.draw_button(global_vars.screen, "Save JSON", save_btn_rect, mouse_pos, global_vars.FONT)
+        draw_layer_tabs(global_vars.screen, mouse_pos)
+        L.draw_sliders(global_vars.screen, mouse_pos)
 
-    # Drawing the Top GUI Rows
-    
-    # Row 1: Control buttons
-    draw_button(global_vars.screen, "Clear", clear_btn_rect, mouse_pos, global_vars.FONT)
-    draw_button(global_vars.screen, "Capture", capture_btn_rect, mouse_pos, global_vars.FONT)
-    draw_button(global_vars.screen, "New Layer", new_layer_btn_rect, mouse_pos, global_vars.FONT)
-    
-    # Row 2: New buttons for capturing and loading JSON
-    draw_button(global_vars.screen, "Load JSON", load_json_btn_rect, mouse_pos, global_vars.FONT)
-    draw_button(global_vars.screen, "Save JSON", save_btn_rect, mouse_pos, global_vars.FONT)
-    
-    # Row 3: Layer tabs (adjusted to use new y-coordinate) 
-    draw_layer_tabs(global_vars.screen, mouse_pos)
-    layers[active_layer_index].draw_sliders(global_vars.screen, mouse_pos)
+        # Draw main panel grid and text box
+        main_panel_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT, global_vars.MAIN_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
+        pygame.draw.rect(global_vars.screen, global_vars.BG_COLOR, main_panel_rect)
+        for gx in range(global_vars.GUI_PANEL_WIDTH, global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH, global_vars.GRID_SIZE):
+            pygame.draw.line(global_vars.screen, global_vars.GRID_COLOR, (gx, global_vars.TOP_PANEL_HEIGHT), (gx, global_vars.HEIGHT), 1)
+        for gy in range(global_vars.TOP_PANEL_HEIGHT, global_vars.HEIGHT, global_vars.GRID_SIZE):
+            pygame.draw.line(global_vars.screen, global_vars.GRID_COLOR, (global_vars.GUI_PANEL_WIDTH, gy), (global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH, gy), 1)
 
-    main_panel_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT, global_vars.MAIN_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
-    pygame.draw.rect(global_vars.screen, global_vars.BG_COLOR, main_panel_rect)
+        if enable_text_box:
+            pygame.draw.rect(global_vars.screen, (200, 200, 200), generate.text_box_rect, 2)
+            bg_color = (230, 230, 230) if generate.text_box_active else (200, 200, 200)
+            pygame.draw.rect(global_vars.screen, bg_color, generate.text_box_rect)
+            display_text = graph_description if graph_description != "" else default_instruction
+            text_color = (0, 0, 0) if graph_description != "" else (150, 150, 150)
+            txt_surface = global_vars.FONT.render(display_text, True, text_color)
+            global_vars.screen.blit(txt_surface, (generate.text_box_rect.x + 5, generate.text_box_rect.y + 5))
 
-    for gx in range(global_vars.GUI_PANEL_WIDTH, global_vars.GUI_PANEL_WIDTH+global_vars.MAIN_PANEL_WIDTH, global_vars.GRID_SIZE):
-        pygame.draw.line(global_vars.screen, global_vars.GRID_COLOR, (gx, global_vars.TOP_PANEL_HEIGHT), (gx, global_vars.HEIGHT), 1)
-    for gy in range(global_vars.TOP_PANEL_HEIGHT, global_vars.HEIGHT, global_vars.GRID_SIZE):
-        pygame.draw.line(global_vars.screen, global_vars.GRID_COLOR, (global_vars.GUI_PANEL_WIDTH, gy), (global_vars.GUI_PANEL_WIDTH+global_vars.MAIN_PANEL_WIDTH, gy), 1)
+        # Render graph nodes and edges on main panel
+        for n1 in L.graph.adjacency_list:
+            for n2 in L.graph.adjacency_list[n1]:
+                if n2 > n1:
+                    x1, y1 = L.graph.nodes[n1]
+                    x2, y2 = L.graph.nodes[n2]
+                    st = (x1 + global_vars.GUI_PANEL_WIDTH, y1 + global_vars.TOP_PANEL_HEIGHT)
+                    en = (x2 + global_vars.GUI_PANEL_WIDTH, y2 + global_vars.TOP_PANEL_HEIGHT)
+                    graph.draw_jagged_or_curved_edge(global_vars.screen, L.edge_color, st, en, L.edge_noise, L.edge_curve, L.edge_thickness)
+        for i, (nx, ny) in enumerate(L.graph.nodes):
+            sx = nx + global_vars.GUI_PANEL_WIDTH
+            sy = ny + global_vars.TOP_PANEL_HEIGHT
+            pygame.draw.circle(global_vars.screen, L.node_color, (sx, sy), global_vars.NODE_SIZE // 2)
+            pygame.draw.circle(global_vars.screen, L.node_color, (sx, sy), global_vars.NODE_SIZE // 2, 1)
 
-    # Draw the text box for graph description on top of the middle panel.
-    if enable_text_box:
-        pygame.draw.rect(global_vars.screen, (200, 200, 200), generate.text_box_rect, 2)
+        # Render right composite panel
+        right_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
+                                   global_vars.RIGHT_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
+        pygame.draw.rect(global_vars.screen, global_vars.BG_COLOR, right_rect)
+        pygame.draw.rect(global_vars.screen, (200, 200, 200), right_rect, 2)
+        right_panel_surf = pygame.Surface((global_vars.RIGHT_PANEL_WIDTH, right_rect.height), pygame.SRCALPHA)
+        temp_rect = pygame.Rect(0, 0, global_vars.RIGHT_PANEL_WIDTH, right_rect.height)
+        post_group = pygame.Surface((global_vars.RIGHT_PANEL_WIDTH, right_rect.height), pygame.SRCALPHA)
+        top_group = pygame.Surface((global_vars.RIGHT_PANEL_WIDTH, right_rect.height), pygame.SRCALPHA)
 
-        if generate.text_box_active:
-        # Use a lighter background to indicate active state.
-            pygame.draw.rect(global_vars.screen, (230, 230, 230), generate.text_box_rect)
+        # Determine bounding box for composite nodes
+        all_xs, all_ys = [], []
+        for (xx, yy) in layers[0].compositeGraph.nodes:
+            all_xs.append(xx)
+            all_ys.append(yy)
+        if all_xs and all_ys:
+            minx, maxx = min(all_xs), max(all_xs)
+            miny, maxy = min(all_ys), max(all_ys)
+            bw = maxx - minx or 1
+            bh = maxy - miny or 1
         else:
-            # Use the normal background for inactive state.
-            pygame.draw.rect(global_vars.screen, (200, 200, 200), generate.text_box_rect)
+            bw = bh = 1
 
-        display_text = graph_description if graph_description != "" else default_instruction
-        text_color = (0, 0, 0) if graph_description != "" else (150, 150, 150)
-        txt_surface = global_vars.FONT.render(display_text, True, text_color)
-        global_vars.screen.blit(txt_surface, (generate.text_box_rect.x + 5, generate.text_box_rect.y + 5))
-
-    L = layers[active_layer_index]
-
-    if L.fill_cycles == 1 and L.base_cycles:
-        cycle_surf_main = pygame.Surface((global_vars.MAIN_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT), pygame.SRCALPHA)
-        cycle_surf_main.fill((0, 0, 0, 0))
-        for cyc in L.base_cycles:
-            if len(cyc) < 3:
-                continue
-            pts = []
-            for n_idx in cyc:
-                bx, by = L.graph.nodes[n_idx]
-                pts.append((bx, by))
-            pygame.draw.polygon(cycle_surf_main, tuple(L.cycle_color), pts)
-        global_vars.screen.blit(cycle_surf_main, (global_vars.GUI_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT))
-
-    for n1 in L.graph.adjacency_list:
-        for n2 in L.graph.adjacency_list[n1]:
-            if n2 > n1:
-                x1, y1 = L.graph.nodes[n1]
-                x2, y2 = L.graph.nodes[n2]
-                st = (x1 + global_vars.GUI_PANEL_WIDTH, y1 + global_vars.TOP_PANEL_HEIGHT)
-                en = (x2 + global_vars.GUI_PANEL_WIDTH, y2 + global_vars.TOP_PANEL_HEIGHT)
-                graph.draw_jagged_or_curved_edge(global_vars.screen, L.edge_color, st, en,
-                                           L.edge_noise, L.edge_curve, L.edge_thickness)
-
-    for i, (nx, ny) in enumerate(L.graph.nodes):
-        sx = nx + global_vars.GUI_PANEL_WIDTH
-        sy = ny + global_vars.TOP_PANEL_HEIGHT
-        pygame.draw.circle(global_vars.screen, L.node_color, (sx, sy), global_vars.NODE_SIZE // 2)
-        pygame.draw.circle(global_vars.screen, L.node_color, (sx, sy), global_vars.NODE_SIZE // 2, 1)
-
-    # Right panel: Composite view 
-    right_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
-                             global_vars.RIGHT_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
-    pygame.draw.rect(global_vars.screen, global_vars.BG_COLOR, right_rect)
-    pygame.draw.rect(global_vars.screen, (200, 200, 200), right_rect, 2)
+        base_scale = min((global_vars.RIGHT_PANEL_WIDTH - 20) / bw, (right_rect.height - 20) / bh)
+        for i, ly in enumerate(layers):
+            scale_3d = base_scale * ly.camera_zoom
+            offset_x = ((global_vars.RIGHT_PANEL_WIDTH - bw * scale_3d) * 0.5 - minx * scale_3d + ly.camera_offset[0])
+            offset_y = ((right_rect.height - bh * scale_3d) * 0.5 - miny * scale_3d + ly.camera_offset[1])
+            
+            layer_surf = pygame.Surface((global_vars.RIGHT_PANEL_WIDTH, right_rect.height), pygame.SRCALPHA)
+            if ly.fill_cycles == 1 and len(ly.compositeGraph.nodes) > 1 and len(ly.composite_edges) > 0:
+                graph.fill_composite_cycles_with_intersections(ly, layer_surf, temp_rect, scale_3d, offset_x, offset_y)
     
-    right_panel_surf = pygame.Surface((global_vars.RIGHT_PANEL_WIDTH, right_rect.height), pygame.SRCALPHA)
-    temp_rect = pygame.Rect(0, 0, global_vars.RIGHT_PANEL_WIDTH, right_rect.height)
+            transformed = []
+            for (xx, yy) in ly.compositeGraph.nodes:
+                xx_ = xx + ly.comp_offset_x
+                yy_ = yy + ly.comp_offset_y
+                x_yaw = xx_ * math.cos(ly.camera_yaw)
+                z_yaw = xx_ * math.sin(ly.camera_yaw)
+                y_pitch = yy_ * math.cos(ly.camera_pitch) - z_yaw * math.sin(ly.camera_pitch)
+                z_pitch = yy_ * math.sin(ly.camera_pitch) + z_yaw * math.cos(ly.camera_pitch)
+                denom = global_vars.PERSPECTIVE_DISTANCE - z_pitch
+                if abs(denom) < 1e-6:
+                    denom = 1e-6
+                pf = global_vars.PERSPECTIVE_DISTANCE / denom
+                x_eff = x_yaw * pf
+                y_eff = y_pitch * pf
+                transformed.append((x_eff, y_eff))
     
-    post_group = pygame.Surface((global_vars.RIGHT_PANEL_WIDTH, right_rect.height), pygame.SRCALPHA)
-    top_group = pygame.Surface((global_vars.RIGHT_PANEL_WIDTH, right_rect.height), pygame.SRCALPHA)
+            for (i1, j) in ly.composite_edges:
+                p1 = transformed[i1]
+                p2 = transformed[j]
+                st = (int(p1[0] * scale_3d + offset_x), int(p1[1] * scale_3d + offset_y))
+                en = (int(p2[0] * scale_3d + offset_x), int(p2[1] * scale_3d + offset_y))
+                graph.draw_jagged_or_curved_edge(layer_surf, ly.edge_color, st, en, ly.edge_noise, ly.edge_curve, ly.edge_thickness)
     
-    # Determine overall bounding box for composite nodes (across all layers)
-    all_xs, all_ys = [], []
-    for (xx, yy) in layers[0].compositeGraph.nodes:
-        all_xs.append(xx)
-        all_ys.append(yy)
-    if all_xs and all_ys:
-        minx, maxx = min(all_xs), max(all_xs)
-        miny, maxy = min(all_ys), max(all_ys)
-        bw = maxx - minx or 1
-        bh = maxy - miny or 1
-    else:
-        bw = bh = 1
+            if ly.draw_composite_nodes == 1:
+                for (xx_eff, yy_eff) in transformed:
+                    sx = int(xx_eff * scale_3d + offset_x)
+                    sy = int(yy_eff * scale_3d + offset_y)
+                    pygame.draw.circle(layer_surf, ly.node_color, (sx, sy), global_vars.NODE_SIZE // 2)
+                    pygame.draw.circle(layer_surf, ly.node_color, (sx, sy), global_vars.NODE_SIZE // 2, 1)
 
-    base_scale = min((global_vars.RIGHT_PANEL_WIDTH - 20) / bw, (right_rect.height - 20) / bh)
+            layer_surf = postprocess.apply_composite_paint_splatters(layer_surf, ly, base_scale,
+                                                                     minx, miny, bw, bh,
+                                                                     global_vars.PERSPECTIVE_DISTANCE,
+                                                                     global_vars.RIGHT_PANEL_WIDTH, right_rect.height)
+            
+            if i <= active_layer_index and ly.blur_amount > 0:
+                layer_surf = postprocess.gaussian_blur(layer_surf, ly.blur_amount)
+            
+            if i <= active_layer_index:
+                post_group.blit(layer_surf, (0, 0))
+            else:
+                top_group.blit(layer_surf, (0, 0))
 
-    for i, ly in enumerate(layers):
-        scale_3d = base_scale * ly.camera_zoom
-        offset_x = ((global_vars.RIGHT_PANEL_WIDTH - bw * scale_3d) * 0.5 - minx * scale_3d + ly.camera_offset[0])
-        offset_y = ((right_rect.height - bh * scale_3d) * 0.5 - miny * scale_3d + ly.camera_offset[1])
-        
-        layer_surf = pygame.Surface((global_vars.RIGHT_PANEL_WIDTH, right_rect.height), pygame.SRCALPHA)
-        if ly.fill_cycles == 1 and len(ly.compositeGraph.nodes) > 1 and len(ly.composite_edges) > 0:
-            graph.fill_composite_cycles_with_intersections(ly, layer_surf, temp_rect, scale_3d, offset_x, offset_y)
-    
-        transformed = []
-        for (xx, yy) in ly.compositeGraph.nodes:
-            xx_ = xx + ly.comp_offset_x
-            yy_ = yy + ly.comp_offset_y
-            x_yaw = xx_ * math.cos(ly.camera_yaw)
-            z_yaw = xx_ * math.sin(ly.camera_yaw)
-            y_pitch = yy_ * math.cos(ly.camera_pitch) - z_yaw * math.sin(ly.camera_pitch)
-            z_pitch = yy_ * math.sin(ly.camera_pitch) + z_yaw * math.cos(ly.camera_pitch)
-            denom = global_vars.PERSPECTIVE_DISTANCE - z_pitch
-            if abs(denom) < 1e-6:
-                denom = 1e-6
-            pf = global_vars.PERSPECTIVE_DISTANCE / denom
-            x_eff = x_yaw * pf
-            y_eff = y_pitch * pf
-            transformed.append((x_eff, y_eff))
-    
-        for (i1, j) in ly.composite_edges:
-            p1 = transformed[i1]
-            p2 = transformed[j]
-            st = (int(p1[0] * scale_3d + offset_x), int(p1[1] * scale_3d + offset_y))
-            en = (int(p2[0] * scale_3d + offset_x), int(p2[1] * scale_3d + offset_y))
-            graph.draw_jagged_or_curved_edge(layer_surf, ly.edge_color, st, en,
-                                       ly.edge_noise, ly.edge_curve, ly.edge_thickness)
-    
-        if ly.draw_composite_nodes == 1:
-            for (xx_eff, yy_eff) in transformed:
-                sx = int(xx_eff * scale_3d + offset_x)
-                sy = int(yy_eff * scale_3d + offset_y)
-                pygame.draw.circle(layer_surf, ly.node_color, (sx, sy), global_vars.NODE_SIZE // 2)
-                pygame.draw.circle(layer_surf, ly.node_color, (sx, sy), global_vars.NODE_SIZE // 2, 1)
+        right_panel_surf.blit(post_group, (0, 0))
+        right_panel_surf.blit(top_group, (0, 0))
+        right_panel_surf = postprocess.apply_painterly_effect(post_group, top_group,
+                                                              L.post_process_intensity,
+                                                              global_vars.RIGHT_PANEL_WIDTH, right_rect.height,
+                                                              global_vars.BG_COLOR, canvas)
+        global_vars.screen.blit(right_panel_surf, (right_rect.x, right_rect.y))
+        pygame.display.flip()
 
-        # Apply paint splatters for this layer.
-        layer_surf = postprocess.apply_composite_paint_splatters(layer_surf, ly, base_scale,
-                                                     minx, miny, bw, bh,
-                                                     global_vars.PERSPECTIVE_DISTANCE,
-                                                     global_vars.RIGHT_PANEL_WIDTH, right_rect.height)
-        
-        if i <= active_layer_index and ly.blur_amount > 0:
-            layer_surf = postprocess.gaussian_blur(layer_surf, ly.blur_amount)
-    
-        if i <= active_layer_index:
-            post_group.blit(layer_surf, (0, 0))
-        else:
-            top_group.blit(layer_surf, (0, 0))
+    pygame.quit()
+    sys.exit()
 
-    right_panel_surf.blit(post_group, (0, 0))
-    right_panel_surf.blit(top_group, (0, 0))
 
-    # Apply painterly effect
-    right_panel_surf = postprocess.apply_painterly_effect(post_group, top_group,
-                                              L.post_process_intensity,
-                                              global_vars.RIGHT_PANEL_WIDTH, right_rect.height,
-                                              global_vars.BG_COLOR, canvas)
-    
-    # Finally, blit composite view onto the global_vars.screen.
-    global_vars.screen.blit(right_panel_surf, (right_rect.x, right_rect.y))
-    pygame.display.flip()
+###############################
+# Main method
+###############################
 
-pygame.quit()
-sys.exit()
+def main():
+    # Initialize a few layers
+    create_new_layer("Layer 1")
+    create_new_layer("Layer 2")
+    create_new_layer("Layer 3")
+
+    # Start the main game loop
+    game_loop()
+
+if __name__ == "__main__":
+    main()
