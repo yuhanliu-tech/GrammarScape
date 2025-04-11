@@ -1,4 +1,5 @@
-# GrammarScape: Interactive Graph Editor (IN-PROGRESS AS OF APRIL 2025)
+# GrammarScape: Interactive Graph Editor 
+# (IN-PROGRESS AS OF APRIL 2025)
 **Yuhan Liu's DMD Senior Design Project**
 
 <img src="imgs/stars_ui.png" width="800"/>
