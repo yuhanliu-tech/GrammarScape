@@ -69,6 +69,14 @@ graph_description = ""  # Stores the current input text
 # Utility Functions
 ###############################
 
+def draw_tooltip(screen, text, pos):
+    text_surf = global_vars.FONT.render(text, True, (255, 255, 255))
+    bg_rect = text_surf.get_rect(topleft=(pos[0] + 10, pos[1] + 10))
+    bg_rect.inflate_ip(10, 6)
+    pygame.draw.rect(screen, (20, 20, 20), bg_rect)
+    pygame.draw.rect(screen, (255, 255, 0), bg_rect, 1)
+    screen.blit(text_surf, (bg_rect.x + 5, bg_rect.y + 3))
+
 def create_new_layer(name):
     layer = ui_comps.Layer(name)
     layers.append(layer)
@@ -556,6 +564,35 @@ def game_loop():
                                                               global_vars.RIGHT_PANEL_WIDTH, right_rect.height,
                                                               global_vars.BG_COLOR, canvas)
         global_vars.screen.blit(right_panel_surf, (right_rect.x, right_rect.y))
+
+        # Instructional Text
+
+        # Tooltip hover detection
+        tooltip_text = None
+
+        if generate.text_box_rect.collidepoint(mouse_pos):
+            tooltip_text = "Describe the graph you want Gemini to generate here.\nClick to type, enter to submit.\n(Example: 'Cube')"
+        else:
+            main_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
+                            global_vars.MAIN_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
+            right_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH,
+                                global_vars.TOP_PANEL_HEIGHT,
+                                global_vars.RIGHT_PANEL_WIDTH,
+                                global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
+        if right_rect.collidepoint(mouse_pos):
+            tooltip_text = "Right Panel: Composite painting view with camera manipulation.\nLeft Click + Drag: Vertical Perspective\nRight CLick + Drag: Horizontal Perspective\nMiddle Drag + Click: Drag the current layer"
+
+        if tooltip_text:
+            draw_tooltip(global_vars.screen, tooltip_text, mouse_pos)
+
+        # Draw help text at the bottom of the middle panel
+        instruction_msg = "Left click to add nodes, drag to form edges between nodes."
+        instr_surf = global_vars.FONT.render(instruction_msg, True, (200, 200, 200))
+
+        instr_x = global_vars.GUI_PANEL_WIDTH + 10
+        instr_y = global_vars.HEIGHT - instr_surf.get_height() - 10
+        global_vars.screen.blit(instr_surf, (instr_x, instr_y))
+
         pygame.display.flip()
 
     pygame.quit()
