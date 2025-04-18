@@ -407,7 +407,7 @@ class Layer:
         surface.blit(post_label, post_label_pos)
 
         if post_rect.collidepoint(mouse_pos):
-            tooltips.append("Painterly = oil paint effect. \nSplatters = paint droplets.")
+            tooltips.append("Painterly = oil paint effect. \nSplatters = paint droplets.\nBlur = resolution-based blend.")
 
         for i in range(15, len(self.sliders)):
             self.sliders[i].draw(surface, mouse_pos, global_vars.FONT, show_label=True, inline=True)

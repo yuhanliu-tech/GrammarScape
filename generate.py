@@ -6,7 +6,7 @@ import global_vars
 import graph
 
 # DO NOT COMMIT API KEY
-client = "INSERT KEY"
+client = "INSERT HERE"
 
 ###############################
 # Text Box Setup for Graph Description
@@ -98,7 +98,7 @@ def generate_and_draw_graph(description, layers, active_layer_index):
     # Example logic: create a specific pattern based on keywords
     desc = description.lower()
 
-    bot_message = "Draw an image of a " + desc + " as a graph in the form of nodes and edges. Format your response in the following way: numNodes, (n1, n2), (n3, n4), numEdges, (e1, e2), (e3, e4) where all values are integers. For example, to draw a triangle, return: 3, (100,100), (150,50), (200,100), 3, (0,1), (1,2), (2,0)"
+    bot_message = "Draw an image of a " + desc + " as a graph in the form of nodes and edges. Format your response in the following way: numNodes, (n1, n2), (n3, n4), numEdges, (e1, e2), (e3, e4) where all values are integers. Do not include anything else in your response as it will be used as a string input to code. For example, to draw a triangle, return: 3, (100,100), (150,50), (200,100), 3, (0,1), (1,2), (2,0)"
     timeout = 10
 
     response = client.models.generate_content(
