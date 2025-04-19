@@ -283,7 +283,7 @@ class Layer:
         slider_y += slider_gap
 
         # Edge thickness
-        self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 15,
+        self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 30,
                                    self.edge_thickness, "Thickness", True))
         slider_y += slider_gap + 30
 
