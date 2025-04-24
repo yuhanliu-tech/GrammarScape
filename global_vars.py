@@ -1,5 +1,4 @@
 import pygame
-import cv2
 
 ###############################
 # Global Setup Variables

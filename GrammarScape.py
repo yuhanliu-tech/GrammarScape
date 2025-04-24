@@ -18,15 +18,23 @@ pygame.init()
 # User Interaction Setup
 ###############################
 
-# Row 1: Clear, Save, New Layer
-clear_btn_rect = pygame.Rect(10, global_vars.TOP_PANEL_HEIGHT+10, 90, 25)
-capture_btn_rect = pygame.Rect(110, global_vars.TOP_PANEL_HEIGHT+10, 90, 25)
-new_layer_btn_rect = pygame.Rect(210, global_vars.TOP_PANEL_HEIGHT+10, 120, 25)
+# Row 1: Clear, Capture
+clear_btn_rect = pygame.Rect(10, global_vars.TOP_PANEL_HEIGHT + 10, 160, 25)
+capture_btn_rect = pygame.Rect(180, global_vars.TOP_PANEL_HEIGHT + 10, 160, 25)
 
-# Row 2: Capture Right Panel and Load JSON
+# Row 2: Load JSON, Save JSON (unchanged)
 second_row_y = global_vars.TOP_PANEL_HEIGHT + 45
-load_json_btn_rect = pygame.Rect(10, second_row_y, 165, 25)
-save_btn_rect  = pygame.Rect(185, second_row_y, 155, 25)
+load_json_btn_rect = pygame.Rect(10, second_row_y, 160, 25)
+save_btn_rect = pygame.Rect(180, second_row_y, 160, 25)
+
+# Row 3: New Layer, Duplicate Layer
+third_row_y = global_vars.TOP_PANEL_HEIGHT + 80
+new_layer_btn_rect = pygame.Rect(10, third_row_y, 160, 25)
+delete_layer_btn_rect = pygame.Rect(180, third_row_y, 160, 25)
+
+# Row 4: Delete Layer
+fourth_row_y = global_vars.TOP_PANEL_HEIGHT + 115
+duplicate_layer_btn_rect = pygame.Rect(10, fourth_row_y, 330, 25)
 
 running = True
 selected_node = None
@@ -42,28 +50,20 @@ last_mouse_right = (0, 0)
 minx = 0
 miny = 0
 
+# Canvas setup
 canvas = cv2.imread('canvas.jpg')
 if canvas is None:
     raise FileNotFoundError("Canvas texture 'canvas.jpg' not found. Please check your path.")
 # Convert from BGR to RGB for consistency
 canvas = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
 
-# Set up layers
-layers = []
-active_layer_index = 0
-columns = 4
-max_layers = 8
-tab_w = 75
-tab_h = 30
-x0 = 10
-y0 = global_vars.TOP_PANEL_HEIGHT + 90
-gap_x = 5
-gap_y = 5
-
-# text box
+# Text Box
 enable_text_box = True
 default_instruction = "Ask Gemini for a simple graph... (Experimental)"
 graph_description = ""  # Stores the current input text
+
+# Layers
+active_layer_index = 0
 
 ###############################
 # Utility Functions
@@ -77,44 +77,14 @@ def draw_tooltip(screen, text, pos):
     pygame.draw.rect(screen, (255, 255, 0), bg_rect, 1)
     screen.blit(text_surf, (bg_rect.x + 5, bg_rect.y + 3))
 
-def create_new_layer(name):
-    layer = ui_comps.Layer(name)
-    layers.append(layer)
-
-def switch_to_layer(i):
-    global active_layer_index
-    active_layer_index = i
-    if active_layer_index < 0:
-        active_layer_index = 0
-    if active_layer_index >= len(layers):
-        active_layer_index = len(layers) - 1
-
-def draw_layer_tabs(surface, mouse_pos):
-    for i, layer in enumerate(layers):
-        if i >= max_layers:
-            break
-        row = i // columns
-        col = i % columns
-        tab_x = x0 + col * (tab_w + gap_x)
-        tab_y = y0 + row * (tab_h + gap_y)
-        rect = pygame.Rect(tab_x, tab_y, tab_w, tab_h)
-        color = (70, 70, 70) if i == active_layer_index else (50, 50, 50)
-        pygame.draw.rect(surface, color, rect)
-        pygame.draw.rect(surface, (120, 120, 120), rect, 2)
-        txt_surf = global_vars.FONT.render(layer.name, True, (255, 255, 255))
-        surface.blit(txt_surf, (rect.x + 5, rect.y + 5))
-
-def check_tab_click(mouse_pos):
-    for i, layer in enumerate(layers):
-        if i >= max_layers:
-            break
-        row = i // columns
-        col = i % columns
-        tab_x = x0 + col * (tab_w + gap_x)
-        tab_y = y0 + row * (tab_h + gap_y)
-        rect = pygame.Rect(tab_x, tab_y, tab_w, tab_h)
-        if rect.collidepoint(mouse_pos):
-            switch_to_layer(i)
+def draw_text_box():
+    pygame.draw.rect(global_vars.screen, (200, 200, 200), generate.text_box_rect, 2)
+    bg_color = (230, 230, 230) if generate.text_box_active else (200, 200, 200)
+    pygame.draw.rect(global_vars.screen, bg_color, generate.text_box_rect)
+    display_text = graph_description if graph_description != "" else default_instruction
+    text_color = (0, 0, 0) if graph_description != "" else (150, 150, 150)
+    txt_surface = global_vars.FONT.render(display_text, True, text_color)
+    global_vars.screen.blit(txt_surface, (generate.text_box_rect.x + 5, generate.text_box_rect.y + 5))
 
 def read_json(filename):
     global layers, active_layer_index
@@ -278,7 +248,7 @@ def capture_image():
 
 def game_loop():
 
-    global running, selected_node, graph_description
+    global running, selected_node, graph_description, active_layer_index
     global right_panel_left_dragging, right_panel_middle_dragging, right_panel_right_dragging
     global last_mouse_left, last_mouse_middle, last_mouse_right
     global minx, miny
@@ -303,9 +273,12 @@ def game_loop():
 
                 if event.button == 1:
                     mouse_click = True
-                    check_tab_click(event.pos)
+                    active_layer_index = ui_comps.check_tab_click(event.pos, layers, active_layer_index)
                     main_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
                                             global_vars.MAIN_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
+                    # Skip if mouse is over a layer tab
+                    if any(tab_rect.collidepoint(event.pos) for tab_rect in layer_tab_rects):
+                        continue
                     if main_rect.collidepoint(event.pos):
                         if not generate.text_box_rect.collidepoint(event.pos):
                             local_x = event.pos[0] - main_rect.x
@@ -423,7 +396,18 @@ def game_loop():
 
             if new_layer_btn_rect.collidepoint(mouse_pos):
                 nm = f"Layer {len(layers) + 1}"
-                create_new_layer(nm)
+                ui_comps.create_new_layer(nm, layers)
+
+            if delete_layer_btn_rect.collidepoint(mouse_pos):
+                if len(layers) > 1:
+                    del layers[active_layer_index]
+                    active_layer_index = max(0, active_layer_index - 1)
+                    print("Deleted current layer.")
+                else:
+                    print("Cannot delete the last remaining layer.")
+
+            if duplicate_layer_btn_rect.collidepoint(mouse_pos):
+                ui_comps.duplicate_layer(active_layer_index, layers)
 
         L = layers[active_layer_index]
         L.process_sliders(events)
@@ -441,12 +425,14 @@ def game_loop():
         pygame.draw.rect(global_vars.screen, (40, 40, 40), gui_rect)
         pygame.draw.rect(global_vars.screen, (80, 80, 80), gui_rect, 2)
 
-        ui_comps.draw_button(global_vars.screen, "Clear", clear_btn_rect, mouse_pos, global_vars.FONT)
-        ui_comps.draw_button(global_vars.screen, "Capture", capture_btn_rect, mouse_pos, global_vars.FONT)
-        ui_comps.draw_button(global_vars.screen, "New Layer", new_layer_btn_rect, mouse_pos, global_vars.FONT)
+        ui_comps.draw_button(global_vars.screen, "Clear Current", clear_btn_rect, mouse_pos, global_vars.FONT)
+        ui_comps.draw_button(global_vars.screen, "Capture Image", capture_btn_rect, mouse_pos, global_vars.FONT)
+        ui_comps.draw_button(global_vars.screen, "Add Layer", new_layer_btn_rect, mouse_pos, global_vars.FONT)
         ui_comps.draw_button(global_vars.screen, "Load JSON", load_json_btn_rect, mouse_pos, global_vars.FONT)
         ui_comps.draw_button(global_vars.screen, "Save JSON", save_btn_rect, mouse_pos, global_vars.FONT)
-        draw_layer_tabs(global_vars.screen, mouse_pos)
+        ui_comps.draw_button(global_vars.screen, "Delete Layer", delete_layer_btn_rect, mouse_pos, global_vars.FONT)
+        ui_comps.draw_button(global_vars.screen, "Duplicate Graph in New Layer", duplicate_layer_btn_rect, mouse_pos, global_vars.FONT)
+
         L.draw_sliders(global_vars.screen, mouse_pos)
 
         # Draw main panel grid and text box
@@ -457,14 +443,10 @@ def game_loop():
         for gy in range(global_vars.TOP_PANEL_HEIGHT, global_vars.HEIGHT, global_vars.GRID_SIZE):
             pygame.draw.line(global_vars.screen, global_vars.GRID_COLOR, (global_vars.GUI_PANEL_WIDTH, gy), (global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH, gy), 1)
 
+        layer_tab_rects = ui_comps.draw_layer_tabs(global_vars.screen, mouse_pos, layers, active_layer_index, return_rects=True)
+
         if enable_text_box:
-            pygame.draw.rect(global_vars.screen, (200, 200, 200), generate.text_box_rect, 2)
-            bg_color = (230, 230, 230) if generate.text_box_active else (200, 200, 200)
-            pygame.draw.rect(global_vars.screen, bg_color, generate.text_box_rect)
-            display_text = graph_description if graph_description != "" else default_instruction
-            text_color = (0, 0, 0) if graph_description != "" else (150, 150, 150)
-            txt_surface = global_vars.FONT.render(display_text, True, text_color)
-            global_vars.screen.blit(txt_surface, (generate.text_box_rect.x + 5, generate.text_box_rect.y + 5))
+            draw_text_box()
 
         # Render graph nodes and edges on main panel
         for n1 in L.graph.adjacency_list:
@@ -590,7 +572,7 @@ def game_loop():
         instr_surf = global_vars.FONT.render(instruction_msg, True, (200, 200, 200))
 
         instr_x = global_vars.GUI_PANEL_WIDTH + 10
-        instr_y = global_vars.HEIGHT - instr_surf.get_height() - 10
+        instr_y = 30 + instr_surf.get_height() 
         global_vars.screen.blit(instr_surf, (instr_x, instr_y))
 
         pygame.display.flip()
@@ -604,10 +586,12 @@ def game_loop():
 ###############################
 
 def main():
+    global layers
+    layers = []
+
     # Initialize a few layers
-    create_new_layer("Layer 1")
-    create_new_layer("Layer 2")
-    create_new_layer("Layer 3")
+    ui_comps.create_new_layer("Layer 1", layers)
+    ui_comps.create_new_layer("Layer 2", layers)
 
     # Start the main game loop
     game_loop()

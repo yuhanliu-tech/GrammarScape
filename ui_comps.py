@@ -101,7 +101,6 @@ class Slider:
 
 
         else:
-            # Old layout
             self._inline_offset = self.rect.x
             self._inline_width = self.rect.width
 
@@ -151,8 +150,93 @@ class Slider:
             self.value = new_val
 
 ###############################
-# Layer Class
+# Layer Class + Functions
 ###############################
+
+# Set up layers
+columns = 5
+max_layers = 20
+tab_w = 75
+tab_h = 30
+x0 = global_vars.GUI_PANEL_WIDTH + 10  # move into middle panel
+y0 = global_vars.TOP_PANEL_HEIGHT + 40  # top of middle panel
+gap_x = 5
+gap_y = 5
+
+def create_new_layer(name, layers):
+    layer = Layer(name)
+    layers.append(layer)
+
+def switch_to_layer(i, layers, active_layer_index):
+    active_layer_index = i
+    if active_layer_index < 0:
+        active_layer_index = 0
+    if active_layer_index >= len(layers):
+        active_layer_index = len(layers) - 1
+    return active_layer_index
+
+def draw_layer_tabs(surface, mouse_pos, layers, active_layer_index, return_rects=False):
+    tab_rects = []
+    for i, layer in enumerate(layers):
+        if i >= max_layers:
+            break
+        row = i // columns
+        col = i % columns
+        tab_x = x0 + col * (tab_w + gap_x)
+        tab_y = y0 + row * (tab_h + gap_y)
+        rect = pygame.Rect(tab_x, tab_y, tab_w, tab_h)
+        tab_rects.append(rect)
+        color = (70, 70, 70) if i == active_layer_index else (50, 50, 50)
+        pygame.draw.rect(surface, color, rect)
+        pygame.draw.rect(surface, (120, 120, 120), rect, 2)
+        txt_surf = global_vars.FONT.render(layer.name, True, (255, 255, 255))
+        surface.blit(txt_surf, (rect.x + 5, rect.y + 5))
+    if return_rects:
+        return tab_rects
+
+def check_tab_click(mouse_pos, layers, active_layer_index):
+    for i, layer in enumerate(layers):
+        if i >= max_layers:
+            break
+        row = i // columns
+        col = i % columns
+        tab_x = x0 + col * (tab_w + gap_x)
+        tab_y = y0 + row * (tab_h + gap_y)
+        rect = pygame.Rect(tab_x, tab_y, tab_w, tab_h)
+        if rect.collidepoint(mouse_pos):
+            active_layer_index = switch_to_layer(i, layers, active_layer_index)
+    return active_layer_index
+
+def duplicate_layer(active_layer_index, layers):
+    src_layer = layers[active_layer_index]
+    new_layer = Layer(f"{src_layer.name} Copy")
+    # Deep copy the graph and settings
+    new_layer.graph.nodes = list(src_layer.graph.nodes)
+    new_layer.graph.adjacency_list = {k: list(v) for k, v in src_layer.graph.adjacency_list.items()}
+    graph.recalc_edge_slopes(new_layer.graph)
+    new_layer.edge_color = src_layer.edge_color[:]
+    new_layer.cycle_color = src_layer.cycle_color[:]
+    new_layer.node_color = src_layer.node_color[:]
+    new_layer.edge_noise = src_layer.edge_noise
+    new_layer.edge_curve = src_layer.edge_curve
+    new_layer.edge_thickness = src_layer.edge_thickness
+    new_layer.numIterations = src_layer.numIterations
+    new_layer.composite_seed = src_layer.composite_seed
+    new_layer.composite_length_seed = src_layer.composite_length_seed
+    new_layer.composite_tolerance = src_layer.composite_tolerance
+    new_layer.connection_length = src_layer.connection_length
+    new_layer.merge_threshold = src_layer.merge_threshold
+    new_layer.draw_composite_nodes = src_layer.draw_composite_nodes
+    new_layer.use_duplicate_mode = src_layer.use_duplicate_mode
+    new_layer.fill_cycles = src_layer.fill_cycles
+    new_layer.post_process_intensity = src_layer.post_process_intensity
+    new_layer.splatters = src_layer.splatters
+    new_layer.blur_amount = src_layer.blur_amount
+    new_layer.camera_offset = src_layer.camera_offset[:]
+    new_layer.camera_zoom = src_layer.camera_zoom
+    new_layer.camera_yaw = src_layer.camera_yaw
+    new_layer.camera_pitch = src_layer.camera_pitch
+    layers.append(new_layer)
 
 class Layer:
     """
@@ -193,7 +277,7 @@ class Layer:
         self.comp_offset_x = 0
         self.comp_offset_y = 0
         # Toggle node circles
-        self.draw_composite_nodes = 1
+        self.draw_composite_nodes = 0
         # Duplicate mode flag
         self.use_duplicate_mode = 0
         # Fill cycles toggle
@@ -373,8 +457,6 @@ class Layer:
         surface.blit(global_vars.FONT.render(node_label, True, (255, 255, 255)), (nx, ny - 20))
         for i in range(6, 9):
             self.sliders[i].draw(surface, mouse_pos, global_vars.FONT, show_label=False)
-
-        # 4) The rest of the sliders are drawn normally with their existing labels
 
         # --- Edge Options Section ---
         edge_opts_label = global_vars.FONT.render("Edge Options", True, (255, 255, 0))

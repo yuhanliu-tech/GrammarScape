@@ -84,11 +84,11 @@ def apply_composite_paint_splatters(surface, active_layer, base_scale,
                tuple(active_layer.cycle_color[:3])]
     
     # Draw the splatters on the given surface.
-    add_paint_splatters(surface, comp_transformed, palette, splatter_count=20,
+    draw_paint_splatters(surface, comp_transformed, palette, splatter_count=20,
                           splat_seed=splat_seed, splatter_value=active_layer.splatters)
     return surface
 
-def add_paint_splatters(surface, transformed_nodes, palette, splatter_count=20, splat_seed=None, splatter_value=5):
+def draw_paint_splatters(surface, transformed_nodes, palette, splatter_count=20, splat_seed=None, splatter_value=5):
     # Draws paint splatters on the given surface using a deterministic random generator.
     if not transformed_nodes or splatter_value == 0:
         return surface

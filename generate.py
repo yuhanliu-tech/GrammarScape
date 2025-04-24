@@ -6,15 +6,15 @@ import global_vars
 import graph
 
 # DO NOT COMMIT API KEY
-client = "INSERT HERE"
+client = genai.Client(api_key="INSERT")
 
 ###############################
 # Text Box Setup for Graph Description
 ###############################
 # Position the text box at the top of the middle panel.
 # Adjust coordinates as needed. 
-text_box_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + 10, global_vars.TOP_PANEL_HEIGHT + 10, 300, 30)
-text_box_active = False
+text_box_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + 10, global_vars.HEIGHT - 50, 300, 30)
+text_box_active = True
 
 def parse_graph_string(graph_str, graph_obj):
 
@@ -119,27 +119,6 @@ def generate_and_draw_graph(description, layers, active_layer_index):
     except Exception as e:
         print("An error occurred while parsing the graph string:", e)
         return
-
-    '''
-    if "triangle" in desc:
-        # Create a triangular graph
-        L.graph.add_node((100, 100))
-        L.graph.add_node((150, 50))
-        L.graph.add_node((200, 100))
-        L.graph.add_edge(0, 1)
-        L.graph.add_edge(1, 2)
-        L.graph.add_edge(2, 0)
-    elif "square" in desc:
-        # Create a square graph
-        L.graph.add_node((100, 100))
-        L.graph.add_node((100, 200))
-        L.graph.add_node((200, 200))
-        L.graph.add_node((200, 100))
-        L.graph.add_edge(0, 1)
-        L.graph.add_edge(1, 2)
-        L.graph.add_edge(2, 3)
-        L.graph.add_edge(3, 0)
-    '''
         
     # Rebuild composite graph after generating new graph.
     L.build_composite_graph()
