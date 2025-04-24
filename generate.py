@@ -13,7 +13,7 @@ client = genai.Client(api_key="INSERT")
 ###############################
 # Position the text box at the top of the middle panel.
 # Adjust coordinates as needed. 
-text_box_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + 10, global_vars.HEIGHT - 50, 300, 30)
+text_box_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + 10, global_vars.HEIGHT - 70, 300, 30)
 text_box_active = True
 
 def parse_graph_string(graph_str, graph_obj):
