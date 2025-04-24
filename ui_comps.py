@@ -207,13 +207,17 @@ def check_tab_click(mouse_pos, layers, active_layer_index):
             active_layer_index = switch_to_layer(i, layers, active_layer_index)
     return active_layer_index
 
+# Duplicate current layer
 def duplicate_layer(active_layer_index, layers):
     src_layer = layers[active_layer_index]
     new_layer = Layer(f"{src_layer.name} Copy")
-    # Deep copy the graph and settings
+
+    # Deep copy the graph and composite settings
     new_layer.graph.nodes = list(src_layer.graph.nodes)
     new_layer.graph.adjacency_list = {k: list(v) for k, v in src_layer.graph.adjacency_list.items()}
     graph.recalc_edge_slopes(new_layer.graph)
+
+    # Copy settings
     new_layer.edge_color = src_layer.edge_color[:]
     new_layer.cycle_color = src_layer.cycle_color[:]
     new_layer.node_color = src_layer.node_color[:]
@@ -236,6 +240,32 @@ def duplicate_layer(active_layer_index, layers):
     new_layer.camera_zoom = src_layer.camera_zoom
     new_layer.camera_yaw = src_layer.camera_yaw
     new_layer.camera_pitch = src_layer.camera_pitch
+
+    # Now sync sliders and checkboxes with values
+    new_layer.sliders[0].value = new_layer.edge_color[0]
+    new_layer.sliders[1].value = new_layer.edge_color[1]
+    new_layer.sliders[2].value = new_layer.edge_color[2]
+    new_layer.sliders[3].value = new_layer.cycle_color[0]
+    new_layer.sliders[4].value = new_layer.cycle_color[1]
+    new_layer.sliders[5].value = new_layer.cycle_color[2]
+    new_layer.sliders[6].value = new_layer.node_color[0]
+    new_layer.sliders[7].value = new_layer.node_color[1]
+    new_layer.sliders[8].value = new_layer.node_color[2]
+    new_layer.sliders[9].value = new_layer.edge_noise
+    new_layer.sliders[10].value = new_layer.edge_curve
+    new_layer.sliders[11].value = new_layer.edge_thickness
+    new_layer.sliders[12].value = new_layer.numIterations
+    new_layer.sliders[13].value = new_layer.composite_seed
+    new_layer.sliders[14].value = new_layer.composite_length_seed
+    new_layer.sliders[15].value = new_layer.post_process_intensity
+    new_layer.sliders[16].value = new_layer.splatters
+    new_layer.sliders[17].value = new_layer.blur_amount
+
+    new_layer.checkboxes[0].value = bool(new_layer.draw_composite_nodes)
+    new_layer.checkboxes[1].value = bool(new_layer.use_duplicate_mode)
+    new_layer.checkboxes[2].value = bool(new_layer.fill_cycles)
+
+    new_layer.build_composite_graph()
     layers.append(new_layer)
 
 class Layer:

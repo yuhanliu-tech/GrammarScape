@@ -467,7 +467,6 @@ def game_loop():
         right_rect = pygame.Rect(global_vars.GUI_PANEL_WIDTH + global_vars.MAIN_PANEL_WIDTH, global_vars.TOP_PANEL_HEIGHT,
                                    global_vars.RIGHT_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
         pygame.draw.rect(global_vars.screen, global_vars.BG_COLOR, right_rect)
-        pygame.draw.rect(global_vars.screen, (200, 200, 200), right_rect, 2)
         right_panel_surf = pygame.Surface((global_vars.RIGHT_PANEL_WIDTH, right_rect.height), pygame.SRCALPHA)
         temp_rect = pygame.Rect(0, 0, global_vars.RIGHT_PANEL_WIDTH, right_rect.height)
         post_group = pygame.Surface((global_vars.RIGHT_PANEL_WIDTH, right_rect.height), pygame.SRCALPHA)
@@ -574,6 +573,9 @@ def game_loop():
         instr_x = global_vars.GUI_PANEL_WIDTH + 10
         instr_y = 30 + instr_surf.get_height() 
         global_vars.screen.blit(instr_surf, (instr_x, instr_y))
+
+        # cleaner outline
+        pygame.draw.rect(global_vars.screen, (200, 200, 200), right_rect, 2)
 
         pygame.display.flip()
 
