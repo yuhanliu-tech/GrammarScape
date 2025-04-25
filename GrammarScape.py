@@ -14,6 +14,10 @@ import generate
 
 pygame.init()
 
+# Program icon
+icon_surface = pygame.image.load('logo.png')
+pygame.display.set_icon(icon_surface)
+
 ###############################
 # User Interaction Setup
 ###############################
@@ -49,6 +53,7 @@ last_mouse_right = (0, 0)
 
 minx = 0
 miny = 0
+
 
 # Canvas setup
 canvas = cv2.imread('canvas.jpg')
