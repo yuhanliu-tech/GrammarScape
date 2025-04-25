@@ -233,6 +233,7 @@ def duplicate_layer(active_layer_index, layers):
     new_layer.draw_composite_nodes = src_layer.draw_composite_nodes
     new_layer.use_duplicate_mode = src_layer.use_duplicate_mode
     new_layer.fill_cycles = src_layer.fill_cycles
+    new_layer.paint_texture = src_layer.paint_texture
     new_layer.post_process_intensity = src_layer.post_process_intensity
     new_layer.splatters = src_layer.splatters
     new_layer.blur_amount = src_layer.blur_amount
@@ -264,6 +265,7 @@ def duplicate_layer(active_layer_index, layers):
     new_layer.checkboxes[0].value = bool(new_layer.draw_composite_nodes)
     new_layer.checkboxes[1].value = bool(new_layer.use_duplicate_mode)
     new_layer.checkboxes[2].value = bool(new_layer.fill_cycles)
+    new_layer.checkboxes[3].value = bool(new_layer.paint_texture)
 
     new_layer.build_composite_graph()
     layers.append(new_layer)
@@ -312,6 +314,8 @@ class Layer:
         self.use_duplicate_mode = 0
         # Fill cycles toggle
         self.fill_cycles = 0
+        # Apply paint overlay
+        self.paint_texture = 0
 
         # Cycle storage
         self.base_cycles = []
@@ -340,13 +344,14 @@ class Layer:
         smaller_gap = 20
         s_height = 16
 
-        checkbox_x = 10
+        checkbox_x = 15
         checkbox_y = slider_y
-        gap = 105
+        gap = 85
         self.checkboxes = [
             Checkbox(checkbox_x, checkbox_y, "Toggle Nodes", bool(self.draw_composite_nodes)),
             Checkbox(checkbox_x + gap, checkbox_y, "Copy Graph", bool(self.use_duplicate_mode)),
-            Checkbox(checkbox_x + 2 * gap, checkbox_y, "Fill Cycles", bool(self.fill_cycles))
+            Checkbox(checkbox_x + 2 * gap, checkbox_y, "Fill Cycles", bool(self.fill_cycles)),
+            Checkbox(checkbox_x + 3 * gap, checkbox_y, "Paint Texture", bool(self.paint_texture))
         ]
         slider_y += 85  # Move the Y cursor down after checkbox row
 
@@ -583,6 +588,8 @@ class Layer:
         if new_fill != self.fill_cycles:
             self.fill_cycles = int(new_fill)
 
+        if self.checkboxes[3].value != self.paint_texture:
+            self.paint_texture = int(self.checkboxes[3].value)
 
         new_post = self.sliders[15].value
         self.post_process_intensity = new_post

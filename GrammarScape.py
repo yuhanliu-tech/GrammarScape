@@ -52,10 +52,12 @@ miny = 0
 
 # Canvas setup
 canvas = cv2.imread('canvas.jpg')
-if canvas is None:
-    raise FileNotFoundError("Canvas texture 'canvas.jpg' not found. Please check your path.")
 # Convert from BGR to RGB for consistency
 canvas = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
+
+# Paint overlay setup
+paint_overlay = pygame.image.load("paint.jpg").convert_alpha()
+paint_overlay = pygame.transform.smoothscale(paint_overlay, (global_vars.RIGHT_PANEL_WIDTH, global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT))
 
 # Text Box
 enable_text_box = True
@@ -122,6 +124,7 @@ def read_json(filename):
         layer.draw_composite_nodes = settings["draw_composite_nodes"]
         layer.use_duplicate_mode = settings["use_duplicate_mode"]
         layer.fill_cycles = settings["fill_cycles"]
+        layer.paint_texture = settings["paint_texture"]
         layer.post_process_intensity = settings["post_process_intensity"]
         layer.splatters = settings["splatters"]
         layer.blur_amount = settings["blur_amount"]
@@ -149,6 +152,7 @@ def read_json(filename):
         layer.checkboxes[0].value = layer.draw_composite_nodes
         layer.checkboxes[1].value = layer.use_duplicate_mode
         layer.checkboxes[2].value = layer.fill_cycles
+        layer.checkboxes[3].value = layer.paint_texture
         layer.sliders[15].value = layer.post_process_intensity
         layer.sliders[16].value = layer.splatters
         layer.sliders[17].value = layer.blur_amount
@@ -184,6 +188,7 @@ def save_json(filename):
                 "draw_composite_nodes": layer.draw_composite_nodes,
                 "use_duplicate_mode": layer.use_duplicate_mode,
                 "fill_cycles": layer.fill_cycles,
+                "paint_texture": layer.paint_texture,
                 "post_process_intensity": layer.post_process_intensity,
                 "splatters": layer.splatters,
                 "blur_amount": layer.blur_amount,
@@ -544,6 +549,11 @@ def game_loop():
                                                               L.post_process_intensity,
                                                               global_vars.RIGHT_PANEL_WIDTH, right_rect.height,
                                                               global_vars.BG_COLOR, canvas)
+        
+        if L.checkboxes[3].value: 
+            paint_overlay.set_alpha(100)  
+            right_panel_surf.blit(paint_overlay, (0, 0))
+
         global_vars.screen.blit(right_panel_surf, (right_rect.x, right_rect.y))
 
         # Instructional Text
