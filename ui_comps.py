@@ -410,10 +410,10 @@ class Layer:
         self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 1, 10,
                                    self.numIterations, "Iterations", True))
         slider_y += slider_gap
-        self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 1000,
+        self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 100,
                                    self.composite_seed, "Seed - Composite", True))
         slider_y += slider_gap
-        self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 1000,
+        self.sliders.append(Slider(slider_x, slider_y, slider_w, s_height, 0, 100,
                                    self.composite_length_seed, "Seed - Edge Lengths", True))
         slider_y += slider_gap + 30
 

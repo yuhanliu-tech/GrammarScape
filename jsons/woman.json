@@ -487,7 +487,7 @@
                     255
                 ],
                 "edge_noise": 2,
-                "edge_curve": 0,
+                "edge_curve": 39,
                 "edge_thickness": 16,
                 "numIterations": 3,
                 "composite_seed": 0,
@@ -503,8 +503,8 @@
                 "splatters": 21,
                 "blur_amount": 0,
                 "camera_offset": [
-                    6,
-                    38
+                    23,
+                    37
                 ],
                 "camera_zoom": 0.32624290911740916,
                 "camera_yaw": 0.0,

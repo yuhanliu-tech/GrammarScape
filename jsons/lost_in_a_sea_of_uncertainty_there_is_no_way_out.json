@@ -1,0 +1,398 @@
+{
+    "active_layer_index": 2,
+    "layers": [
+        {
+            "name": "Layer 1",
+            "graph": {
+                "nodes": [
+                    [
+                        40,
+                        140
+                    ],
+                    [
+                        40,
+                        700
+                    ],
+                    [
+                        400,
+                        700
+                    ],
+                    [
+                        400,
+                        140
+                    ]
+                ],
+                "adjacency_list": {
+                    "0": [
+                        1,
+                        3
+                    ],
+                    "1": [
+                        0,
+                        2
+                    ],
+                    "2": [
+                        1,
+                        3
+                    ],
+                    "3": [
+                        2,
+                        0
+                    ]
+                }
+            },
+            "settings": {
+                "edge_color": [
+                    200,
+                    200,
+                    200
+                ],
+                "cycle_color": [
+                    178,
+                    233,
+                    193,
+                    150
+                ],
+                "node_color": [
+                    255,
+                    255,
+                    255
+                ],
+                "edge_noise": 0,
+                "edge_curve": 0,
+                "edge_thickness": 2,
+                "numIterations": 3,
+                "composite_seed": 0,
+                "composite_length_seed": 0,
+                "composite_tolerance": 0.0873,
+                "connection_length": 100,
+                "merge_threshold": 10,
+                "draw_composite_nodes": 1,
+                "use_duplicate_mode": 1,
+                "fill_cycles": 1,
+                "paint_texture": 0,
+                "post_process_intensity": 0,
+                "splatters": 0,
+                "blur_amount": 0,
+                "camera_offset": [
+                    0,
+                    0
+                ],
+                "camera_zoom": 1.2100000000000002,
+                "camera_yaw": 0.0,
+                "camera_pitch": 0.0
+            }
+        },
+        {
+            "name": "Layer 2",
+            "graph": {
+                "nodes": [
+                    [
+                        140,
+                        320
+                    ],
+                    [
+                        220,
+                        280
+                    ],
+                    [
+                        300,
+                        340
+                    ],
+                    [
+                        300,
+                        380
+                    ],
+                    [
+                        220,
+                        400
+                    ],
+                    [
+                        160,
+                        380
+                    ],
+                    [
+                        120,
+                        360
+                    ],
+                    [
+                        60,
+                        400
+                    ],
+                    [
+                        80,
+                        360
+                    ],
+                    [
+                        40,
+                        300
+                    ],
+                    [
+                        60,
+                        340
+                    ],
+                    [
+                        200,
+                        320
+                    ],
+                    [
+                        220,
+                        340
+                    ],
+                    [
+                        200,
+                        360
+                    ],
+                    [
+                        260,
+                        340
+                    ],
+                    [
+                        140,
+                        260
+                    ],
+                    [
+                        320,
+                        480
+                    ],
+                    [
+                        120,
+                        580
+                    ],
+                    [
+                        300,
+                        660
+                    ]
+                ],
+                "adjacency_list": {
+                    "0": [
+                        9,
+                        1
+                    ],
+                    "1": [
+                        0,
+                        2,
+                        11
+                    ],
+                    "2": [
+                        1,
+                        3
+                    ],
+                    "3": [
+                        2,
+                        4
+                    ],
+                    "4": [
+                        3,
+                        5,
+                        13
+                    ],
+                    "5": [
+                        4,
+                        6
+                    ],
+                    "6": [
+                        5,
+                        8
+                    ],
+                    "7": [
+                        8,
+                        10
+                    ],
+                    "8": [
+                        6,
+                        7
+                    ],
+                    "9": [
+                        0,
+                        10
+                    ],
+                    "10": [
+                        7,
+                        9
+                    ],
+                    "11": [
+                        1,
+                        12
+                    ],
+                    "12": [
+                        11,
+                        13
+                    ],
+                    "13": [
+                        12,
+                        4
+                    ],
+                    "14": [],
+                    "15": [],
+                    "16": [],
+                    "17": [],
+                    "18": []
+                }
+            },
+            "settings": {
+                "edge_color": [
+                    200,
+                    138,
+                    129
+                ],
+                "cycle_color": [
+                    249,
+                    89,
+                    62,
+                    150
+                ],
+                "node_color": [
+                    207,
+                    144,
+                    107
+                ],
+                "edge_noise": 17,
+                "edge_curve": 0,
+                "edge_thickness": 2,
+                "numIterations": 3,
+                "composite_seed": 0,
+                "composite_length_seed": 0,
+                "composite_tolerance": 0.0873,
+                "connection_length": 100,
+                "merge_threshold": 10,
+                "draw_composite_nodes": 1,
+                "use_duplicate_mode": 1,
+                "fill_cycles": 1,
+                "paint_texture": 0,
+                "post_process_intensity": 7,
+                "splatters": 25,
+                "blur_amount": 2,
+                "camera_offset": [
+                    0,
+                    0
+                ],
+                "camera_zoom": 1.0,
+                "camera_yaw": 0.0,
+                "camera_pitch": 0.0
+            }
+        },
+        {
+            "name": "Layer 3",
+            "graph": {
+                "nodes": [
+                    [
+                        180,
+                        140
+                    ],
+                    [
+                        80,
+                        360
+                    ],
+                    [
+                        320,
+                        500
+                    ],
+                    [
+                        280,
+                        260
+                    ],
+                    [
+                        320,
+                        480
+                    ],
+                    [
+                        220,
+                        540
+                    ],
+                    [
+                        140,
+                        560
+                    ],
+                    [
+                        160,
+                        640
+                    ],
+                    [
+                        240,
+                        620
+                    ]
+                ],
+                "adjacency_list": {
+                    "0": [
+                        3,
+                        1
+                    ],
+                    "1": [
+                        2,
+                        0
+                    ],
+                    "2": [
+                        1,
+                        4
+                    ],
+                    "3": [
+                        0,
+                        4
+                    ],
+                    "4": [
+                        2,
+                        3
+                    ],
+                    "5": [
+                        8,
+                        6
+                    ],
+                    "6": [
+                        7,
+                        5
+                    ],
+                    "7": [
+                        8,
+                        6
+                    ],
+                    "8": [
+                        5,
+                        7
+                    ]
+                }
+            },
+            "settings": {
+                "edge_color": [
+                    200,
+                    200,
+                    200
+                ],
+                "cycle_color": [
+                    200,
+                    200,
+                    200,
+                    150
+                ],
+                "node_color": [
+                    167,
+                    170,
+                    114
+                ],
+                "edge_noise": 9,
+                "edge_curve": 0,
+                "edge_thickness": 2,
+                "numIterations": 5,
+                "composite_seed": 16,
+                "composite_length_seed": 47,
+                "composite_tolerance": 0.0873,
+                "connection_length": 100,
+                "merge_threshold": 10,
+                "draw_composite_nodes": 1,
+                "use_duplicate_mode": 0,
+                "fill_cycles": 0,
+                "paint_texture": 0,
+                "post_process_intensity": 4,
+                "splatters": 5,
+                "blur_amount": 1,
+                "camera_offset": [
+                    332,
+                    554
+                ],
+                "camera_zoom": 1.1,
+                "camera_yaw": 0.0,
+                "camera_pitch": 0.28999999999999987
+            }
+        }
+    ]
+}

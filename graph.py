@@ -19,6 +19,47 @@ class Graph:
         self.nodes.append(pos)
         self.adjacency_list[idx] = []
         return idx
+    
+    def remove_node(self, pos):
+        if not self.nodes:
+            return  # Nothing to remove
+
+        # Find the closest node
+        closest_idx = min(range(len(self.nodes)),
+                        key=lambda i: (self.nodes[i][0] - pos[0])**2 + (self.nodes[i][1] - pos[1])**2)
+
+        # Remove from nodes
+        self.nodes.pop(closest_idx)
+
+        # Remove from adjacency list
+        if closest_idx in self.adjacency_list:
+            del self.adjacency_list[closest_idx]
+
+        # Remove edges incident to this node
+        to_delete = []
+        for n, neighbors in self.adjacency_list.items():
+            if closest_idx in neighbors:
+                neighbors.remove(closest_idx)
+            # Also adjust any neighbors with index > closest_idx (because indices shifted)
+            self.adjacency_list[n] = [nbr - 1 if nbr > closest_idx else nbr for nbr in neighbors]
+
+        # Remove edge slopes related to this node
+        new_edge_slopes = {}
+        for (n1, n2), slope in self.edge_slopes.items():
+            if closest_idx in (n1, n2):
+                continue  # Skip edges connected to the removed node
+            # Shift indices if necessary
+            n1_new = n1 - 1 if n1 > closest_idx else n1
+            n2_new = n2 - 1 if n2 > closest_idx else n2
+            new_edge_slopes[(n1_new, n2_new)] = slope
+        self.edge_slopes = new_edge_slopes
+
+        # Shift adjacency list keys
+        new_adj_list = {}
+        for n, neighbors in self.adjacency_list.items():
+            n_new = n - 1 if n > closest_idx else n
+            new_adj_list[n_new] = neighbors
+        self.adjacency_list = new_adj_list
 
     def add_edge(self, n1, n2):
         # Creates an undirected edge between nodes n1 and n2 and computes its slope

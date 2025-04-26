@@ -328,7 +328,14 @@ def game_loop():
                                                global_vars.TOP_PANEL_HEIGHT,
                                                global_vars.RIGHT_PANEL_WIDTH,
                                                global_vars.HEIGHT - global_vars.TOP_PANEL_HEIGHT)
-                    if right_rect.collidepoint(event.pos):
+                    if main_rect.collidepoint(event.pos):
+                        # remove node
+                        local_x = event.pos[0] - main_rect.x
+                        local_y = event.pos[1] - main_rect.y
+                        L = layers[active_layer_index]
+                        L.graph.remove_node((local_x, local_y))
+                        L.build_composite_graph()
+                    elif right_rect.collidepoint(event.pos):
                         right_panel_right_dragging = True
                         last_mouse_right = event.pos
 
@@ -556,8 +563,9 @@ def game_loop():
                                                               global_vars.BG_COLOR, canvas)
         
         if L.checkboxes[3].value: 
-            paint_overlay.set_alpha(100)  
+            paint_overlay.set_alpha(75)  
             right_panel_surf.blit(paint_overlay, (0, 0))
+            #right_panel_surf.blit(paint_overlay, (0, 0), special_flags=pygame.BLEND_MULT)
 
         global_vars.screen.blit(right_panel_surf, (right_rect.x, right_rect.y))
 
@@ -582,7 +590,7 @@ def game_loop():
             draw_tooltip(global_vars.screen, tooltip_text, mouse_pos)
 
         # Draw help text at the bottom of the middle panel
-        instruction_msg = "Left click to add nodes, drag to form edges between nodes."
+        instruction_msg = "Left click to add nodes, Right click to delete, Left Drag to make edges."
         instr_surf = global_vars.FONT.render(instruction_msg, True, (200, 200, 200))
 
         instr_x = global_vars.GUI_PANEL_WIDTH + 10
