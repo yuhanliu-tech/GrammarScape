@@ -425,6 +425,7 @@ def game_loop():
 
             if duplicate_layer_btn_rect.collidepoint(mouse_pos):
                 ui_comps.duplicate_layer(active_layer_index, layers)
+                active_layer_index = len(layers) - 1
 
         L = layers[active_layer_index]
         L.process_sliders(events)
