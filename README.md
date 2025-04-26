@@ -7,23 +7,17 @@ GrammarScape is an interactive tool for creating, editing, and visualizing abstr
 
 ## Features
 
-- **Interactive Graph Editing:**  
-  Create and connect nodes on a grid-based canvas with intuitive mouse controls.
+- **Interactive Graph Editing:** Create and connect nodes on a grid-based canvas with intuitive mouse controls.
 
-- **Procedural Expansion:**  
-  Automatically build composite graphs from your base graph, including cycle detection and edge intersection handling.
+- **Procedural Expansion:** Automatically build composite graphs from your base graph, including cycle detection and edge intersection handling.
 
-- **3D Perspective & Camera Controls:**  
-  Explore your graphs with adjustable camera zoom, yaw, and pitch to view your composite graphs in 3D space.
+- **3D Perspective & Camera Controls:** Explore your graphs with adjustable camera zoom, yaw, and pitch to view your composite graphs in 3D space.
 
-- **Painterly Post-Processing:**  
-  Apply oil-painting stylization, Gaussian blur, paint splatter overlays, and canvas textures.
+- **Painterly Post-Processing:** Apply oil-painting stylization, Gaussian blur, paint splatter overlays, and canvas textures.
 
-- **Multi-Layer System:**  
-  Organize and blend multiple graph layers independently to build richly textured, multi-depth compositions.
+- **Multi-Layer System:** Organize and blend multiple graph layers independently to build richly textured, multi-depth compositions.
 
-- **AI-Assisted Graph Generation:**
-  Use natural language prompts to request simple graph structures via Gemini API integration.
+- **AI-Assisted Graph Generation:** Use natural language prompts to request simple graph structures via Gemini API integration.
 
 ## Example Paintings
 
