@@ -59,7 +59,7 @@ An abstract depiction of a woman, generated using two AI prompts ("woman's head"
 
 GrammarScape adapts Paul Merrell’s 2023 graph grammar expansion methods while emphasizing accessible graph creation, intuitive layering, and painterly abstraction. It combines a modular Python architecture with Pygame-based UI and OpenCV post-processing to deliver an extensible and expressive procedural art platform.
 
-Read more about developing GrammarScape in my [final report](). 
+Read more about developing GrammarScape in my [final report](https://github.com/yuhanliu-tech/GrammarScape/blob/main/grammarscape_report.doc). 
 
 ## References
 
