@@ -289,7 +289,7 @@ class Layer:
 
         # Colors / edge effects
         self.edge_color = [200, 200, 200]
-        self.cycle_color = [200, 200, 200, 150]
+        self.cycle_color = [200, 200, 200, 200]
         self.node_color = [255, 255, 255]
         self.edge_noise = 0
         self.edge_curve = 0

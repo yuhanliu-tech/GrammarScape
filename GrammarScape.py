@@ -465,6 +465,17 @@ def game_loop():
         if enable_text_box:
             draw_text_box()
 
+        # If fill_cycles is checked, draw cycles on middle panel
+        if L.fill_cycles == 1:
+            cycles = graph.detect_cycles_in_graph(L.graph)
+            for cyc in cycles:
+                if len(cyc) >= 3:
+                    pts = []
+                    for idx in cyc:
+                        nx, ny = L.graph.nodes[idx]
+                        pts.append((nx + global_vars.GUI_PANEL_WIDTH, ny + global_vars.TOP_PANEL_HEIGHT))
+                    pygame.draw.polygon(global_vars.screen, L.cycle_color, pts)
+
         # Render graph nodes and edges on main panel
         for n1 in L.graph.adjacency_list:
             for n2 in L.graph.adjacency_list[n1]:

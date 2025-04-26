@@ -317,11 +317,7 @@ def fill_composite_cycles_with_intersections(layer, surface, panel_rect,
             seen_sets.add(sset)
             final_polygons.append(poly)
 
-     # Create a temporary surface to draw polygons
-    cycle_surf = pygame.Surface((panel_rect.width, panel_rect.height), pygame.SRCALPHA)
-    cycle_surf.fill((0, 0, 0, 0))
-
-    # Draw each polygon (cycle) on the temporary surface
+    # Draw each polygon (cycle) directly on the given surface
     for cyc in final_polygons:
         pts = []
         for vidx in cyc:
@@ -330,10 +326,7 @@ def fill_composite_cycles_with_intersections(layer, surface, panel_rect,
             py = vy - panel_rect.y
             pts.append((px, py))
         if len(pts) >= 3:
-            pygame.draw.polygon(cycle_surf, tuple(layer.cycle_color), pts)
-
-    # Finally, blit the temporary surface onto the main surface
-    surface.blit(cycle_surf, (panel_rect.x, panel_rect.y))
+            pygame.draw.polygon(surface, layer.cycle_color, pts)
 
 
 ###############################
