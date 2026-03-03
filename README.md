@@ -23,7 +23,7 @@ GrammarScape is an interactive tool for creating, editing, and visualizing abstr
 
 Roberta Kiphuth's "Scribbles: Falling Star"             |  GrammarScape Painting Inspired by Reference
 :-------------------------:|:-------------------------:
-![](captures/stars.png)  |  ![](imgs/scribbles-ref.jpg)
+![](imgs/scribbles-ref.jpg)  |  ![](captures/stars.png)
 
 <img src="captures/design.png" width="300"/>
 
